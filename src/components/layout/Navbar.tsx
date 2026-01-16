@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import Logo from "@/assets/icons/Logo";
+import { ModeToggle } from "./ModeToggle";
 
 
 // Hamburger icon component
@@ -202,6 +203,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           </div>
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <ModeToggle />
             <Button
               variant="ghost"
               size="sm"
