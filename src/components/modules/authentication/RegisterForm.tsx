@@ -14,6 +14,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import Password from "@/components/ui/Password";
+import { useRegisterMutation } from "@/redux/features/auth/auth.api";
+import { toast } from "sonner";
 
 
 const registerSchema = z.object({
@@ -24,16 +26,20 @@ const registerSchema = z.object({
   email: z.email({ message: "Please enter a valid email" }),
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
+    .min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z
     .string()
-    .min(6, { message: "Confirm Password must be at least 6 characters" }),
+    .min(8, { message: "Confirm Password must be at least 8 characters" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
+
+  const [register] = useRegisterMutation();
+
+
   const form = useForm<z.infer<typeof registerSchema>>( {
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -44,8 +50,24 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof registerSchema>) => {
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+
+
+    const userInfo = {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+    };
+    try {
+
+      const result = await register(userInfo).unwrap();
+      console.log("Registration successful:", result);
+      toast.success("Registration successful!");
+    }
+    catch (error) {
+      console.error("Registration failed:", error);
+      toast.error("Registration failed. Please try again.");
+    }
   };
 
   return (
