@@ -9,17 +9,28 @@ import {
 } from "@/components/ui/card";
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import Password from "@/components/ui/Password";
 
 
 const registerSchema = z.object({
-  name: z.string().min(2, {error: "Name must be at least 4 characters"}).max(50),
-  email: z.email(),
-  password: z.string().min(6 ,{error: "Password must be at least 6 characters"}),
-  confirmPassword: z.string().min(6, {error: "Confirm Password must be at least 6 characters"}),
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(50),
+  email: z.email({ message: "Please enter a valid email" }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z
+    .string()
+    .min(6, { message: "Confirm Password must be at least 6 characters" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
@@ -87,7 +98,9 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Password" {...field} type="password" />
+                    {/* <Input placeholder="Password" {...field} type="password" /> */} 
+
+                    <Password {...field} />
                   </FormControl>
                   <FormDescription className="sr-only">
                     This is your public display name.
@@ -103,7 +116,8 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Confirm Password" {...field} type="password" />
+                    {/* <Input placeholder="Confirm Password" {...field} type="password" /> */}
+                    <Password {...field} />
                   </FormControl>
                   <FormDescription className="sr-only">
                     This is your public display name.
