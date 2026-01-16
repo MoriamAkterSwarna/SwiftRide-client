@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,19 +8,56 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import {z} from "zod";
+import { useLoginMutation } from "@/redux/features/auth/auth.api";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import Password from "@/components/ui/Password";
+
+const loginSchema = z.object({
+  email: z.email({ message: "Please enter a valid email" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+});
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+
+const navigate = useNavigate();
+  const [login] = useLoginMutation(); 
+
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    try {
+      const result = await login(data).unwrap();
+      console.log("Login successful:",  result);
+      // toast.success("Login successful!");
+      // navigate("/");
+      
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      // toast.error("Login failed. Please try again.");
+      if(error.status === 401){
+        toast.error("Your account is not verified. Please verify your account.");
+        console.log("email", data.email)
+        navigate("/verify", {state: data.email});
+      }
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -30,40 +68,57 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input id="password" type="password" required />
-              </Field>
-              <Field>
-                <Button type="submit">Login</Button>
-                <Button variant="outline" type="button">
-                  Login with Google
-                </Button>
-                <FieldDescription className="text-center">
-                  Don&apos;t have an account? <Link to="/register">Sign up</Link>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="john.doe@example.com"
+                        {...field}
+                        type="email"
+                      />
+                    </FormControl>
+                    <FormDescription className="sr-only">
+                      This is your public display name.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      
+
+                      <Password {...field} />
+                    </FormControl>
+                    <FormDescription className="sr-only">
+                      This is your public display name.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+             
+              <Button className="w-full" type="submit">
+                Sign In
+              </Button>
+            </form>
+
+            <Link to="/register" className="mt-4 inline-block text-sm text-primary hover:underline">
+              Don't have an account? Register
+            </Link>
+          </Form>
         </CardContent>
       </Card>
     </div>

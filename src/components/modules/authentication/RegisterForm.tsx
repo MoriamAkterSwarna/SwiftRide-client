@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import Password from "@/components/ui/Password";
 import { useRegisterMutation } from "@/redux/features/auth/auth.api";
 import { toast } from "sonner";
+import { Link, useNavigate } from "react-router";
 
 
 const registerSchema = z.object({
@@ -50,6 +51,8 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
     },
   });
 
+  const navigate= useNavigate();
+
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
 
 
@@ -63,6 +66,7 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
       const result = await register(userInfo).unwrap();
       console.log("Registration successful:", result);
       toast.success("Registration successful!");
+      navigate("/verify");
     }
     catch (error) {
       console.error("Registration failed:", error);
@@ -148,8 +152,11 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit">Submit</Button>
+            <Button className="w-full" type="submit">Register</Button>
           </form>
+          <Link to="/login" className="mt-4 inline-block text-sm text-primary hover:underline">
+            Already have an account? Login
+          </Link>
         </Form>
       </CardContent>
     </Card>
