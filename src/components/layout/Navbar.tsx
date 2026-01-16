@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import Logo from "@/assets/icons/Logo";
 import { ModeToggle } from "./ModeToggle";
-
+import { Link } from "react-router";
 
 // Hamburger icon component
 const HamburgerIcon = ({
@@ -39,7 +39,7 @@ const HamburgerIcon = ({
   >
     <path
       d="M4 12L20 12"
-      className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
+      className="origin-center -translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-315"
     />
     <path
       d="M4 12H20"
@@ -47,7 +47,7 @@ const HamburgerIcon = ({
     />
     <path
       d="M4 12H20"
-      className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[135deg]"
+      className="origin-center translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-135"
     />
   </svg>
 );
@@ -70,10 +70,8 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 }
 // Default navigation links
 const defaultNavigationLinks: NavbarNavItem[] = [
-  { href: "#", label: "Home", active: true },
-  { href: "#", label: "Features" },
-  { href: "#", label: "Pricing" },
-  { href: "#", label: "About" },
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
 ];
 export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
   (
@@ -83,11 +81,8 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       logoHref = "#",
       navigationLinks = defaultNavigationLinks,
       signInText = "Sign In",
-      signInHref = "#signin",
-      ctaText = "Get Started",
-      ctaHref = "#get-started",
+      signInHref = "/login",
       onSignInClick,
-      onCtaClick,
       ...props
     },
     ref
@@ -126,7 +121,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       <header
         ref={combinedRef}
         className={cn(
-          "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 [&_*]:no-underline",
+          "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 md:px-6 *:no-underline",
           className
         )}
         {...(props as any)}
@@ -150,16 +145,20 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenu className="max-w-none">
                     <NavigationMenuList className="flex-col items-start gap-0">
                       {navigationLinks.map((link, index) => (
-                        <NavigationMenuItem key={index} className="w-full">
-                          <button
-                            onClick={(e) => e.preventDefault()}
+                        <NavigationMenuItem
+                          asChild
+                          key={index}
+                          className="w-full"
+                        >
+                          <Link
+                            to={link.href ?? "/"}
                             className={cn(
                               "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
                               link.active && "bg-accent text-accent-foreground"
                             )}
                           >
                             {link.label}
-                          </button>
+                          </Link>
                         </NavigationMenuItem>
                       ))}
                     </NavigationMenuList>
@@ -174,7 +173,6 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 className="flex items-center space-x-2 text-primary hover:text-primary/90 transition-colors cursor-pointer"
               >
                 <div className="text-2xl">{logo}</div>
-                
               </button>
               {/* Navigation menu */}
               {!isMobile && (
@@ -182,17 +180,18 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <NavigationMenuLink
-                          href={link.href}
-                          onClick={(e: any) => e.preventDefault()}
-                          className={cn(
-                            "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
-                            "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
-                            link.active && "before:scale-x-100 text-primary"
-                          )}
-                          data-active={link.active}
-                        >
-                          {link.label}
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to={link.href ?? "/"}
+                            className={cn(
+                              "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
+                              "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
+                              link.active && "before:scale-x-100 text-primary"
+                            )}
+                            data-active={link.active}
+                          >
+                            {link.label}
+                          </Link>
                         </NavigationMenuLink>
                       </NavigationMenuItem>
                     ))}
@@ -204,26 +203,13 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <ModeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onSignInClick) onSignInClick();
-              }}
-            >
-              {signInText}
-            </Button>
+
             <Button
               size="sm"
               className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onCtaClick) onCtaClick();
-              }}
+              
             >
-              {ctaText}
+              <Link to={signInHref} >{signInText}</Link>
             </Button>
           </div>
         </div>
