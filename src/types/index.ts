@@ -1,4 +1,4 @@
-export type { ISendOtp, ILogin, IRegister } from "./auth.type";
+export type { ISendOtp, ILogin, IRegister, IVerifyOtp } from "./auth.type";
 
 export interface IOtpResponse<T> {
   success: boolean;

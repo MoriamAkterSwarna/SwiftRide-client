@@ -1,45 +1,46 @@
-
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
+} from "@/components/ui/field";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
-import { useForm } from "react-hook-form"
-import Logo from "@/assets/icons/Logo"
-import { zodResolver } from "@hookform/resolvers/zod"
-import  z from "zod"
+} from "@/components/ui/input-otp";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import Logo from "@/assets/icons/Logo";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
 
-const FormSchema = z.object({
+export const FormSchema = z.object({
   pin: z.string().min(6, {
     message: "Your one-time password must be 6 characters.",
   }),
 });
 
+interface OTPFormProps extends Omit<React.ComponentProps<"div">, "onSubmit"> {
+  onSubmit: (data: z.infer<typeof FormSchema>) => void;
+}
 
-
-export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
-
-    const form = useForm<z.infer<typeof FormSchema>>({
-      resolver: zodResolver(FormSchema),
-      defaultValues: {
-        pin: "",
-      },
-    });
-
-     const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-       console.log("OTP submitted:", data);
-      }
+export function OTPForm({ className, onSubmit, ...props }: OTPFormProps) {
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      pin: "",
+    },
+  });
 
   return (
     <Form {...form}>
@@ -52,7 +53,6 @@ export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
                 className="flex flex-col items-center gap-2 font-medium"
               >
                 <div className="flex size-8 items-center justify-center rounded-md">
-                 
                   <Logo />
                 </div>
                 <span className="sr-only">SwiftRide</span>
@@ -63,7 +63,6 @@ export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
               </FieldDescription>
             </div>
             <FieldGroup>
-              
               <FormField
                 control={form.control}
                 name="pin"
