@@ -8,7 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,30 +26,29 @@ import { useRegisterMutation } from "@/redux/features/auth/auth.api";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 
-
-const registerSchema = z.object({
-  name: z
-    .string()
-    .min(2, { message: "Name must be at least 2 characters" })
-    .max(50),
-  email: z.email({ message: "Please enter a valid email" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" }),
-  confirmPassword: z
-    .string()
-    .min(8, { message: "Confirm Password must be at least 8 characters" }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, { message: "Name must be at least 2 characters" })
+      .max(50),
+    email: z.email({ message: "Please enter a valid email" }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" }),
+    confirmPassword: z
+      .string()
+      .min(8, { message: "Confirm Password must be at least 8 characters" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
-
   const [register] = useRegisterMutation();
 
-
-  const form = useForm<z.infer<typeof registerSchema>>( {
+  const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
@@ -51,24 +58,20 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
     },
   });
 
-  const navigate= useNavigate();
+  const navigate = useNavigate();
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
-
-
     const userInfo = {
       name: data.name,
       email: data.email,
       password: data.password,
     };
     try {
-
       const result = await register(userInfo).unwrap();
       console.log("Registration successful:", result);
       toast.success("Registration successful!");
       navigate("/verify");
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Registration failed:", error);
       toast.error("Registration failed. Please try again.");
     }
@@ -108,7 +111,11 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="john.doe@example.com" {...field} type="email" />
+                    <Input
+                      placeholder="john.doe@example.com"
+                      {...field}
+                      type="email"
+                    />
                   </FormControl>
                   <FormDescription className="sr-only">
                     This is your public display name.
@@ -124,7 +131,7 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    {/* <Input placeholder="Password" {...field} type="password" /> */} 
+                    {/* <Input placeholder="Password" {...field} type="password" /> */}
 
                     <Password {...field} />
                   </FormControl>
@@ -152,11 +159,19 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit">Register</Button>
+            <Button className="w-full" type="submit">
+              Register
+            </Button>
           </form>
-          <Link to="/login" className="mt-4 inline-block text-sm text-primary hover:underline">
-            Already have an account? Login
-          </Link>
+          <button className="w-full">
+            Already have an account?
+            <Link
+              to="/login"
+              className="mt-4 ml-2 inline-block text-sm text-primary hover:underline"
+            >
+              Login
+            </Link>
+          </button>
         </Form>
       </CardContent>
     </Card>
