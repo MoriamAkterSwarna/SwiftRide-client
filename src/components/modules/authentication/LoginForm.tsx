@@ -52,18 +52,26 @@ export function LoginForm({
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
       const result = await login(data).unwrap();
-      console.log("Login successful:", result);
-      // toast.success("Login successful!");
-      // navigate("/");
+      // console.log("Login successful:", result?.data?.user?.isVerified);
+
+      if(result?.data?.user?.isVerified){
+        toast.success("Login successful!");
+        navigate("/");
+      }else{
+        toast.error("Your account is not verified. Please verify your account.");
+        navigate("/verify", { state: data.email });
+      }
+      
     } catch (error: any) {
       console.error("Login failed:", error);
-      // toast.error("Login failed. Please try again.");
+
       if (error.status === 401) {
         toast.error(
-          "Your account is not verified. Please verify your account."
+          "Your account is not verified. Please verify your account.",
         );
-        console.log("email", data.email);
         navigate("/verify", { state: data.email });
+      } else {
+        toast.error(error?.data?.message || "Login failed. Please try again.");
       }
     }
   };
