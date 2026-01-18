@@ -63,16 +63,22 @@ export function LoginForm({
       }
       
     } catch (error: any) {
+      console.log(error.data.message);
       console.error("Login failed:", error);
 
-      if (error.status === 401) {
+      if( error.data.message === "Invalid credentials"){
+        
+        toast.error(error.data.message);
+      }
+
+      if (error.data.message === "Your account is not verified. Please verify your account.") {
         toast.error(
-          "Your account is not verified. Please verify your account.",
+          error.data.message,
         );
         navigate("/verify", { state: data.email });
-      } else {
-        toast.error(error?.data?.message || "Login failed. Please try again.");
-      }
+      } 
+
+      
     }
   };
 

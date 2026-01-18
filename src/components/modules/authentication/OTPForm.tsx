@@ -32,9 +32,15 @@ export const FormSchema = z.object({
 
 interface OTPFormProps extends Omit<React.ComponentProps<"div">, "onSubmit"> {
   onSubmit: (data: z.infer<typeof FormSchema>) => void;
+  timer: number;
 }
 
-export function OTPForm({ className, onSubmit, ...props }: OTPFormProps) {
+export function OTPForm({
+  className,
+  onSubmit,
+  timer,
+  ...props
+}: OTPFormProps) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -93,7 +99,7 @@ export function OTPForm({ className, onSubmit, ...props }: OTPFormProps) {
                       </InputOTP>
                     </FormControl>
                     <FieldDescription className="text-center">
-                      Didn&apos;t receive the code? <a href="#">Resend</a>
+                      {timer > 0 ? `Resend in ${timer} seconds` : "Resend"}
                     </FieldDescription>
                     <FormMessage />
                   </FormItem>

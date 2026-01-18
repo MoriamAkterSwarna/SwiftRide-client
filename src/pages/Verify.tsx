@@ -31,13 +31,24 @@ const Verify = () => {
   const [verifyOtp] = useVerifyOtpMutation();
 
   const [confirmed, setConfirmed] = useState(false);
+  const [timer, setTimer] = useState(120);
 
   const [email] = useState(location.state);
   // useEffect(() => {
   //     if(!email){
   //         navigate("/")
   //     }
-  // }, [email]);
+  // }, [email]); 
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      
+      if(email && confirmed){
+        setTimer((prev) => prev - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [confirmed, email]);
 
   const handleSendOtp = async () => {
     const toastId = toast.loading("Sending OTP...");
@@ -86,7 +97,7 @@ const Verify = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <OTPForm onSubmit={onSubmit} />
+        <OTPForm onSubmit={onSubmit} timer={timer} />
       </CardContent>
     </Card>
   ) : (
