@@ -70,7 +70,7 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
       const result = await register(userInfo).unwrap();
       console.log("Registration successful:", result);
       toast.success("Registration successful!");
-      navigate("/verify");
+      navigate("/verify", { state: data.email });
     } catch (error) {
       console.error("Registration failed:", error);
       toast.error("Registration failed. Please try again.");

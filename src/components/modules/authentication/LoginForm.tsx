@@ -26,6 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Password from "@/components/ui/Password";
+import config from "@/config";
 
 const loginSchema = z.object({
   email: z.email({ message: "Please enter a valid email" }),
@@ -52,33 +53,32 @@ export function LoginForm({
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
       const result = await login(data).unwrap();
-      // console.log("Login successful:", result?.data?.user?.isVerified);
+      console.log("Login successful:", result?.data);
 
-      if(result?.data?.user?.isVerified){
+      if (result?.data?.user?.isVerified) {
         toast.success("Login successful!");
         navigate("/");
-      }else{
-        toast.error("Your account is not verified. Please verify your account.");
+      } else {
+        toast.error(
+          "Your account is not verified. Please verify your account.",
+        );
         navigate("/verify", { state: data.email });
       }
-      
     } catch (error: any) {
       console.log(error.data.message);
       console.error("Login failed:", error);
 
-      if( error.data.message === "Invalid credentials"){
-        
+      if (error.data.message === "Invalid credentials") {
         toast.error(error.data.message);
       }
 
-      if (error.data.message === "Your account is not verified. Please verify your account.") {
-        toast.error(
-          error.data.message,
-        );
+      if (
+        error.data.message ===
+        "Your account is not verified. Please verify your account."
+      ) {
+        toast.error(error.data.message);
         navigate("/verify", { state: data.email });
-      } 
-
-      
+      }
     }
   };
 
@@ -135,18 +135,33 @@ export function LoginForm({
                 Sign In
               </Button>
             </form>
-
-            <button className="w-full">
-              Don't have an account?
-              <Link
-                className="mt-4 ml-2 inline-block text-sm text-primary hover:underline"
-                to="/register"
-              >
-                {" "}
-                Sign Up
-              </Link>
-            </button>
           </Form>
+          <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+            <span className="relative z-10 bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+
+          {/*//* http://localhost:5000/api/v1/auth/google */}
+          <Button
+            onClick={() => window.open(`${config.baseUrl}/auth/google`)}
+            type="button"
+            variant="outline"
+            className="w-full cursor-pointer"
+          >
+            Login with Google
+          </Button>
+
+          <button className="w-full">
+            Don't have an account?
+            <Link
+              className="mt-4 ml-2 inline-block text-sm text-primary hover:underline"
+              to="/register"
+            >
+              {" "}
+              Sign Up
+            </Link>
+          </button>
         </CardContent>
       </Card>
     </div>

@@ -1,46 +1,57 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { baseApi } from "@/redux/baseApi";
-import type {
-  ILogin,
-  ILoginResponse,
-  IOtpResponse,
-  IRegister,
-  IRegisterResponse,
-  ISendOtp,
-  IVerifyOtp,
-} from "@/types";
 
-const authApi = baseApi.injectEndpoints({
+import { baseApi } from "@/redux/baseApi";
+
+
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    register: builder.mutation<IRegisterResponse, IRegister>({
+
+
+    register: builder.mutation({
       query: (userInfo) => ({
         url: "/user/register",
         method: "POST",
         data: userInfo,
       }),
     }),
-    login: builder.mutation<ILoginResponse, ILogin>({
+    login: builder.mutation({
       query: (userInfo) => ({
         url: "/auth/login",
         method: "POST",
         data: userInfo,
       }),
     }),
-    sendOtp: builder.mutation<IOtpResponse<null>, ISendOtp>({
+    logout: builder.mutation({
+      query: () => ({
+        url: "/auth/logout",
+        method: "POST",
+      }),
+      invalidatesTags: ["USER"],
+    }),
+    sendOtp: builder.mutation({
       query: (userInfo) => ({
         url: "/otp/send",
         method: "POST",
         data: userInfo,
       }),
     }),
-    verifyOtp: builder.mutation<IOtpResponse<null>, IVerifyOtp>({
+    verifyOtp: builder.mutation({
       query: (userInfo) => ({
         url: "/otp/verify",
         method: "POST",
         data: userInfo,
       }),
     }),
+
+    userInfo: builder.query({
+      query: () => ({
+        url: "/user/me",
+        method: "GET",
+      }),
+      providesTags: ["USER"],
+    }),
+
+
   }),
 });
-export const { useRegisterMutation, useLoginMutation, useSendOtpMutation, useVerifyOtpMutation } =
+export const { useRegisterMutation, useLoginMutation, useSendOtpMutation, useVerifyOtpMutation , useUserInfoQuery, useLogoutMutation} =
   authApi;

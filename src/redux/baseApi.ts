@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { createApi } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "./asiosBaseQuery";
+import config from "@/config";
 
 export const baseApi = createApi({
   reducerPath: "baseApi",
@@ -9,6 +11,14 @@ export const baseApi = createApi({
     
   // }),
 
-  baseQuery: axiosBaseQuery(),
+  baseQuery: axiosBaseQuery(), 
+
+  // baseQuery: fetchBaseQuery({
+  //   baseUrl: config.baseUrl,
+  //   credentials: "include",
+    
+  // }),
+
+  tagTypes: ["USER"],
   endpoints: () => ({}),
 });

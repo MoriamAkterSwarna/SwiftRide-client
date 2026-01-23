@@ -17,7 +17,14 @@ import {
 import { cn } from "@/lib/utils";
 import Logo from "@/assets/icons/Logo";
 import { ModeToggle } from "./ModeToggle";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import {
+  authApi,
+  useLogoutMutation,
+  useUserInfoQuery,
+} from "@/redux/features/auth/auth.api";
+import { useAppDispatch } from "@/redux/hook";
+import { toast } from "sonner";
 
 // Hamburger icon component
 const HamburgerIcon = ({
@@ -63,6 +70,8 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   navigationLinks?: NavbarNavItem[];
   signInText?: string;
   signInHref?: string;
+  signOutText?: string;
+  signOutHref?: string;
   ctaText?: string;
   ctaHref?: string;
   onSignInClick?: () => void;
@@ -82,13 +91,21 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       navigationLinks = defaultNavigationLinks,
       signInText = "Sign In",
       signInHref = "/login",
+      signOutText = "Sign Out",
       onSignInClick,
       ...props
     },
-    ref
+    ref,
   ) => {
+    const { data } = useUserInfoQuery(undefined);
+    const [logout] = useLogoutMutation();
+    const navigate = useNavigate();
+    // console.log(data?.data?.data.email);
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
+
+    const dispatch = useAppDispatch();
+
     useEffect(() => {
       const checkWidth = () => {
         if (containerRef.current) {
@@ -115,14 +132,26 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           ref.current = node;
         }
       },
-      [ref]
+      [ref],
     );
+
+    const handleLogout = async () => {
+      try {
+        await logout(undefined).unwrap();
+        dispatch(authApi.util.resetApiState());
+        navigate("/login");
+        toast.success("Logged out successfully!");
+      } catch (error: any) {
+        toast.error(error?.data?.message || "Logout failed");
+      }
+    };
+
     return (
       <header
         ref={combinedRef}
         className={cn(
           "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 md:px-6 *:no-underline",
-          className
+          className,
         )}
         {...(props as any)}
       >
@@ -154,7 +183,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                             to={link.href ?? "/"}
                             className={cn(
                               "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
-                              link.active && "bg-accent text-accent-foreground"
+                              link.active && "bg-accent text-accent-foreground",
                             )}
                           >
                             {link.label}
@@ -186,7 +215,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                             className={cn(
                               "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
                               "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
-                              link.active && "before:scale-x-100 text-primary"
+                              link.active && "before:scale-x-100 text-primary",
                             )}
                             data-active={link.active}
                           >
@@ -204,18 +233,30 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           <div className="flex items-center gap-3">
             <ModeToggle />
 
-            <Button
-              size="sm"
-              className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
-              
-            >
-              <Link to={signInHref} >{signInText}</Link>
-            </Button>
+            {data?.data?.data?.email && (
+              <Button
+                onClick={handleLogout}
+                size="sm"
+                variant="outline"
+                className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
+              >
+                {signOutText}
+              </Button>
+            )}
+
+            {!data?.data?.data?.email && (
+              <Button
+                size="sm"
+                className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
+              >
+                <Link to={signInHref}>{signInText}</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
     );
-  }
+  },
 );
 Navbar.displayName = "Navbar";
 export { HamburgerIcon };

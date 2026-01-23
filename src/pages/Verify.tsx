@@ -31,23 +31,21 @@ const Verify = () => {
   const [verifyOtp] = useVerifyOtpMutation();
 
   const [confirmed, setConfirmed] = useState(false);
-  const [timer, setTimer] = useState(120);
+  const [timer, setTimer] = useState(60);
 
   const [email] = useState(location.state);
   // useEffect(() => {
-  //     if(!email){
-  //         navigate("/")
-  //     }
-  // }, [email]); 
+  //   if (!email) {
+  //     navigate("/");
+  //   }
+  // }, [email, navigate]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      
-      if(email && confirmed){
-        setTimer((prev) => prev - 1);
-      }
+    if (!email || !confirmed) return;
+    const timerId = setInterval(() => {
+      setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearTimeout(timer);
+    return () => clearInterval(timerId);
   }, [confirmed, email]);
 
   const handleSendOtp = async () => {
@@ -55,10 +53,13 @@ const Verify = () => {
 
     try {
       const res = await sendOtp({ email: email }).unwrap();
-      setConfirmed(true);
+
+      console.log(res);
 
       if (res.success) {
         toast.success(res.message, { id: toastId });
+        setConfirmed(true);
+        setTimer(60);
       }
     } catch (error) {
       console.log(error);
@@ -70,20 +71,21 @@ const Verify = () => {
     const toastId = toast.loading("Verifying OTP...");
 
     const userInfo = {
-      email: email,
+      email,
       otp: data.pin,
     };
 
     try {
       const res = await verifyOtp(userInfo).unwrap();
+      console.log(res);
       if (res.success) {
         toast.success(res.message, { id: toastId });
         navigate("/");
       }
     } catch (error) {
-      const errorMessage =
-        (error as any)?.data?.message || "Invalid OTP. Please try again.";
-      toast.error(errorMessage, { id: toastId });
+      // const errorMessage =
+      // (error as any)?.data?.message || "Invalid OTP. Please try again.";
+      // toast.error(errorMessage, { id: toastId });
       console.error(error);
     }
   };
@@ -97,7 +99,11 @@ const Verify = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <OTPForm onSubmit={onSubmit} timer={timer} />
+        <OTPForm
+          handleSendOtp={handleSendOtp}
+          onSubmit={onSubmit}
+          timer={timer}
+        />
       </CardContent>
     </Card>
   ) : (
@@ -109,7 +115,7 @@ const Verify = () => {
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex justify-end">
-        <Button onClick={handleSendOtp} className="w-full">
+        <Button type="button" onClick={handleSendOtp} className="w-full">
           Confirm
         </Button>
       </CardFooter>
