@@ -1,4 +1,7 @@
+import type { ComponentType } from "react";
+
 export type { ISendOtp, ILogin, IRegister, IVerifyOtp } from "./auth.type";
+export type { IDivision, IDistrict, IRideType, IRide } from "./ride.type";
 
 export interface IOtpResponse<T> {
   success: boolean;
@@ -47,3 +50,14 @@ export interface IUserResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ISidebarItem {
+  title: string;
+  items: {
+    title: string;
+    url: string;
+    component: ComponentType;
+  }[];
+}
+
+export type TRole = "SUPER_ADMIN" | "ADMIN" | "RIDER" | "USER" | "PUBLIC";

@@ -1,9 +1,10 @@
 import { axiosInstance } from "@/lib/axios";
 import type { BaseQueryFn } from "@reduxjs/toolkit/query";
-import type { AxiosError, AxiosRequestConfig } from "axios";
+
+import { AxiosError, type AxiosRequestConfig,  } from "axios";
 
 const axiosBaseQuery =
-  (): BaseQueryFn <
+  (): BaseQueryFn<
     {
       url: string;
       method?: AxiosRequestConfig["method"];
@@ -35,4 +36,4 @@ const axiosBaseQuery =
     }
   };
 
-export { axiosBaseQuery };
+export default axiosBaseQuery;

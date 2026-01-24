@@ -25,6 +25,8 @@ import {
 } from "@/redux/features/auth/auth.api";
 import { useAppDispatch } from "@/redux/hook";
 import { toast } from "sonner";
+import { role } from "@/constants/role";
+import type { TRole } from "@/types";
 
 // Hamburger icon component
 const HamburgerIcon = ({
@@ -63,6 +65,7 @@ export interface NavbarNavItem {
   href?: string;
   label: string;
   active?: boolean;
+  role?: TRole;
 }
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
@@ -79,8 +82,12 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 }
 // Default navigation links
 const defaultNavigationLinks: NavbarNavItem[] = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
+  { href: "/", label: "Home", role: "PUBLIC" },
+  { href: "/about", label: "About", role: "PUBLIC" },
+  { href: "/admin", label: "Dashboard", role: role.admin },
+  { href: "/admin", label: "Dashboard", role: role.superAdmin },
+  { href: "/user", label: "Dashboard", role: role.user },
+  { href: "/rider", label: "Dashboard", role: role.rider },
 ];
 export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
   (
@@ -100,11 +107,13 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     const { data } = useUserInfoQuery(undefined);
     const [logout] = useLogoutMutation();
     const navigate = useNavigate();
-    // console.log(data?.data?.data.email);
+    console.log(data?.data?.data.email);
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
 
     const dispatch = useAppDispatch();
+
+    console.log(data?.data?.data?.role);
 
     useEffect(() => {
       const checkWidth = () => {
@@ -174,21 +183,37 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenu className="max-w-none">
                     <NavigationMenuList className="flex-col items-start gap-0">
                       {navigationLinks.map((link, index) => (
-                        <NavigationMenuItem
-                          asChild
-                          key={index}
-                          className="w-full"
-                        >
-                          <Link
-                            to={link.href ?? "/"}
-                            className={cn(
-                              "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
-                              link.active && "bg-accent text-accent-foreground",
-                            )}
-                          >
-                            {link.label}
-                          </Link>
-                        </NavigationMenuItem>
+                        <React.Fragment key={index}>
+                          {link.role === "PUBLIC" && (
+                            <NavigationMenuItem asChild className="w-full">
+                              <Link
+                                to={link.href ?? "/"}
+                                className={cn(
+                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
+                                  link.active &&
+                                    "bg-accent text-accent-foreground",
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            </NavigationMenuItem>
+                          )}
+
+                          {link.role === data?.data?.data?.role && (
+                            <NavigationMenuItem asChild className="w-full">
+                              <Link
+                                to={link.href ?? "/"}
+                                className={cn(
+                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
+                                  link.active &&
+                                    "bg-accent text-accent-foreground",
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            </NavigationMenuItem>
+                          )}
+                        </React.Fragment>
                       ))}
                     </NavigationMenuList>
                   </NavigationMenu>
@@ -207,23 +232,31 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               {!isMobile && (
                 <NavigationMenu className="flex">
                   <NavigationMenuList className="gap-1">
-                    {navigationLinks.map((link, index) => (
-                      <NavigationMenuItem key={index}>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to={link.href ?? "/"}
-                            className={cn(
-                              "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
-                              "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
-                              link.active && "before:scale-x-100 text-primary",
-                            )}
-                            data-active={link.active}
-                          >
-                            {link.label}
-                          </Link>
-                        </NavigationMenuLink>
-                      </NavigationMenuItem>
-                    ))}
+                    {navigationLinks.map((link, index) => {
+                      const isVisible =
+                        link.role === "PUBLIC" 
+                        ||
+                        link.role === data?.data?.data?.role;
+                      if (!isVisible) return null;
+                      return (
+                        <NavigationMenuItem key={index}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={link.href ?? "/"}
+                              className={cn(
+                                "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
+                                "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
+                                link.active &&
+                                  "before:scale-x-100 text-primary",
+                              )}
+                              data-active={link.active}
+                            >
+                              {link.label}
+                            </Link>
+                          </NavigationMenuLink>
+                        </NavigationMenuItem>
+                      );
+                    })}
                   </NavigationMenuList>
                 </NavigationMenu>
               )}
