@@ -1,6 +1,8 @@
 import AddDistrict from "@/pages/Admin/AddDistrict";
 import AddDivision from "@/pages/Admin/AddDivision";
 import AddRideType from "@/pages/Admin/AddRideType";
+
+
 import type { ISidebarItem } from "@/types";
 import { lazy } from "react";
 
@@ -20,7 +22,6 @@ export const adminSidebarItems: ISidebarItem[] = [
   },
   {
     title: "Ride Management",
-
     items: [
       {
         title: "Add Ride Type",

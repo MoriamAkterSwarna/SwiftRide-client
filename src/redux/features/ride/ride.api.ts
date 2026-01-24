@@ -39,7 +39,7 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["DISTRICT"],
     }),
-    
+
     getDistricts: builder.query<IOtpResponse<IDistrict[]>, void>({
       query: () => ({
         url: "/district",
@@ -54,7 +54,7 @@ export const rideApi = baseApi.injectEndpoints({
       Partial<IRideType>
     >({
       query: (data: any) => ({
-        url: "/ride-type",
+        url: "/ride/ride-type/create",
         method: "POST",
         data: data,
       }),
@@ -62,7 +62,7 @@ export const rideApi = baseApi.injectEndpoints({
     }),
     getRideTypes: builder.query<IOtpResponse<IRideType[]>, void>({
       query: () => ({
-        url: "/ride-type",
+        url: "/ride/ride-type",
         method: "GET",
       }),
       providesTags: ["RIDE_TYPE"],
