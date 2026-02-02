@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -74,7 +75,7 @@ export function AddRideTypeModal() {
                 <DialogTrigger asChild>
                     <Button>Add Ride Type</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-106.25">
                     <DialogHeader>
                         <DialogTitle>Add Ride Type</DialogTitle>
                     </DialogHeader>
@@ -89,7 +90,7 @@ export function AddRideTypeModal() {
                                             <FormLabel>Ride Vehicle</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-[370px]">
+                                                    <SelectTrigger className="w-92.5">
                                                         <SelectValue placeholder="Select a vehicle type" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -113,7 +114,7 @@ export function AddRideTypeModal() {
                                             <FormLabel>Place Type</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-[370px]">
+                                                    <SelectTrigger className="w-92.5">
                                                         <SelectValue placeholder="Select a place type" />
                                                     </SelectTrigger>
                                                 </FormControl>
