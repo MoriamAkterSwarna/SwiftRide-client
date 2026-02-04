@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { baseApi } from "@/redux/baseApi";
 import type {
-  IDivision,
-  IDistrict,
   IRideType,
   IRide,
   IOtpResponse,
@@ -10,43 +8,6 @@ import type {
 
 export const rideApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Division endpoints
-    createDivision: builder.mutation<IOtpResponse<IDivision>, FormData>({
-      query: (data:any) => ({
-        url: "/division/create-division",
-        method: "POST",
-        data: data,
-      }),
-      invalidatesTags: ["DIVISION"],
-    }),
-    getDivisions: builder.query<IOtpResponse<IDivision[]>, void>({
-      query: () => ({
-        url: "/division",
-        method: "GET",
-      }),
-      providesTags: ["DIVISION"],
-    }),
-
-    // District endpoints
-    createDistrict: builder.mutation<
-      IOtpResponse<IDistrict>,
-      Partial<IDistrict>
-    >({
-      query: (data : any) => ({
-        url: "/district/create",
-        method: "POST",
-        data: data,
-      }),
-      invalidatesTags: ["DISTRICT"],
-    }),
-
-    getDistricts: builder.query<IOtpResponse<IDistrict[]>, void>({
-      query: () => ({
-        url: "/district",
-        method: "GET",
-      }),
-      providesTags: ["DISTRICT"],
-    }),
 
     // Ride Type endpoints
     createRideType: builder.mutation<
@@ -93,17 +54,41 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       providesTags: ["RIDE"],
     }),
+     getEarningsData: builder.query({
+      query: ({ period }) => ({
+        url: "/ride/earnings",
+        method: "GET",
+        params: { period },
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getRideHistory: builder.query({
+      query: (params: any) => ({
+        url: "/ride/history",
+        method: "GET",
+        params: params,
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getRideAnalytics: builder.query({
+      query: () => ({
+        url: "/stats/dashboard",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
   }),
 });
 
 export const {
-  useCreateDivisionMutation,
-  useGetDivisionsQuery,
-  useCreateDistrictMutation,
-  useGetDistrictsQuery,
   useCreateRideTypeMutation,
   useGetRideTypesQuery,
   useDeleteRideTypeMutation,
   useCreateRideMutation,
   useGetRidesQuery,
+  useGetEarningsDataQuery,
+  useGetRideHistoryQuery,
+  useGetRideAnalyticsQuery,
 } = rideApi;

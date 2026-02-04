@@ -5,6 +5,10 @@ import About from "@/pages/About";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Verify from "@/pages/Verify";
+import Home from "@/pages/Home";
+import Features from "@/pages/Features";
+import Contact from "@/pages/Contact";
+import FAQ from "@/pages/FAQ";
 import { generateRoutes } from "@/utils/generateRoutes";
 
 import { createBrowserRouter, Navigate } from "react-router";
@@ -22,8 +26,24 @@ export const router = createBrowserRouter([
     path: "/",
     children: [
       {
+        Component: Home,
+        index: true,
+      },
+      {
         Component: About,
         path: "about",
+      },
+      {
+        Component: Features,
+        path: "features",
+      },
+      {
+        Component: Contact,
+        path: "contact",
+      },
+      {
+        Component: FAQ,
+        path: "faq",
       },
     ],
   },
@@ -42,7 +62,7 @@ export const router = createBrowserRouter([
     Component: withAuth(DashboardLayout, role.user as TRole),
     path: "/user",
     children: [
-      { index: true, element: <Navigate to="/user/add-ride" /> },
+      { index: true, element: <Navigate to="/user/request-ride" /> },
       ...generateRoutes(userSidebarItems),
     ],
   },

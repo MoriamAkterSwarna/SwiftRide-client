@@ -1,4 +1,5 @@
-import { useCreateDivisionMutation } from "@/redux/features/ride/ride.api";
+/* eslint-disable react-hooks/incompatible-library */
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { useEffect } from "react";
+import { useCreateDivisionMutation } from "@/redux/features/division/division.api";
 
 const divisionSchema = z.object({
   name: z.string().min(1, "Name is required"),

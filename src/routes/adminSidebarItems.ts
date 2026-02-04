@@ -1,11 +1,9 @@
-import AddDistrict from "@/pages/Admin/AddDistrict";
-import AddDivision from "@/pages/Admin/AddDivision";
-import AddRideType from "@/pages/Admin/AddRideType";
-
+import AddDistrict from "@/pages/Admin/District/AddDistrict";
+import AddDivision from "@/pages/Admin/Division/AddDivision";
+import AddRideType from "@/pages/Admin/RideType/AddRideType";
 
 import type { ISidebarItem } from "@/types";
 import { lazy } from "react";
-
 
 const Analytics = lazy(() => import("@/pages/Admin/Analytics"));
 

@@ -83,7 +83,10 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 // Default navigation links
 const defaultNavigationLinks: NavbarNavItem[] = [
   { href: "/", label: "Home", role: "PUBLIC" },
+  { href: "/features", label: "Features", role: "PUBLIC" },
   { href: "/about", label: "About", role: "PUBLIC" },
+  { href: "/contact", label: "Contact", role: "PUBLIC" },
+  { href: "/faq", label: "FAQ", role: "PUBLIC" },
   { href: "/admin", label: "Dashboard", role: role.admin },
   { href: "/admin", label: "Dashboard", role: role.superAdmin },
   { href: "/user", label: "Dashboard", role: role.user },

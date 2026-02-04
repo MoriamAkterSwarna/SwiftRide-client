@@ -1,10 +1,8 @@
+/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-escape */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  useCreateDistrictMutation,
-  useGetDivisionsQuery,
-} from "@/redux/features/ride/ride.api";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,8 +17,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+import {
+  Field,
+  FieldContent,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+
+import { useGetDivisionsQuery } from "@/redux/features/division/division.api";
+import { useCreateDistrictMutation } from "@/redux/features/district/district.api";
 import { useEffect } from "react";
-import { Field, FieldContent, FieldError, FieldLabel } from "@/components/ui/field";
+
+
+
 
 const districtSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -115,18 +125,28 @@ const AddDistrict = () => {
     },
   });
 
-  const { handleSubmit, formState: { errors }, reset, watch, setValue } = form;
+  const {
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+    setValue,
+  } = form;
   const selectedDistrict = watch("name");
 
   // Watch for district changes and update division
   useEffect(() => {
     if (selectedDistrict && divisionsData?.data) {
       // Find the selected district in bdDistricts
-      const districtInfo = bdDistricts.find(d => d.name === selectedDistrict);
+      const districtInfo = bdDistricts.find(
+        (d: any) => d.name === selectedDistrict,
+      );
 
       if (districtInfo) {
         // Find the matching division in divisionsData
-        const division = divisionsData.data.find(d => d.name === districtInfo.division);
+        const division = divisionsData.data.find(
+          (d: any) => d.name === districtInfo.division,
+        );
 
         if (division) {
           // Set the division ID in the form
@@ -140,15 +160,14 @@ const AddDistrict = () => {
     if (selectedDistrict) {
       const slug = selectedDistrict
         .toLowerCase()
-        .replace(/\s+/g, '-')    // Replace spaces with -
-        .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-        .replace(/\-\-+/g, '-')   // Replace multiple - with single -
-        .replace(/^-+/, '')       // Trim - from start of text
-        .replace(/-+$/, '');      // Trim - from end of text
+        .replace(/\s+/g, "-") // Replace spaces with -
+        .replace(/[^\w\-]+/g, "") // Remove all non-word chars
+        .replace(/\-\-+/g, "-") // Replace multiple - with single -
+        .replace(/^-+/, "") // Trim - from start of text
+        .replace(/-+$/, ""); // Trim - from end of text
       setValue("slug", slug, { shouldValidate: true });
     }
   }, [selectedDistrict, setValue]);
-
 
   const onSubmit = async (data: DistrictFormValues) => {
     try {
@@ -156,11 +175,9 @@ const AddDistrict = () => {
       formData.append("name", data.name);
       formData.append("slug", data.slug);
       formData.append("division", data.division);
-      
-    //  console.log(divisionsData, data.division) 
 
+      //  console.log(divisionsData, data.division)
 
-      
       if (data.description) formData.append("description", data.description);
 
       // Handle thumbnail file
@@ -231,11 +248,10 @@ const AddDistrict = () => {
                   {...form.register("division")}
                   className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
                 >
-                  
                   {divisionsData?.data?.map((division) => (
                     <option
-                      key={division._id}
-                      value={division._id}
+                      key={division?._id}
+                      value={division?._id}
                       className="dark:bg-[#1e1e2e]"
                     >
                       {division.name}
@@ -250,7 +266,6 @@ const AddDistrict = () => {
                 <FieldError errors={[errors.division]} />
               </FieldContent>
             </Field>
-
 
             <Field>
               <FieldLabel>Thumbnail (Optional)</FieldLabel>

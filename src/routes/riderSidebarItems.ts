@@ -1,20 +1,37 @@
-import ManageRides from "@/pages/Rider/ManageRides";
-import RiderDashboard from "@/pages/Rider/RiderDashboard";
+import RequestRide from "@/pages/Rider/RequestRide";
+import RideHistory from "@/pages/Rider/RideHistory";
+import EarningsDashboard from "@/pages/Rider/EarningsDashboard";
+import Profile from "@/pages/User/Profile";
 import type { ISidebarItem } from "@/types";
 
 export const riderSidebarItems: ISidebarItem[] = [
   {
-    title: "Dashboard",
+    title: "Rides",
     items: [
       {
-        title: "Overview",
-        url: "/rider/dashboard",
-        component: RiderDashboard,
+        title: "Request Ride",
+        url: "/rider/request-ride",
+        component: RequestRide,
       },
-       {
-        title: "Manage Rides",
-        url: "/rider/manage-rides",
-        component: ManageRides,
+      {
+        title: "Ride History",
+        url: "/rider/ride-history",
+        component: RideHistory,
+      },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      {
+        title: "Earnings Dashboard",
+        url: "/rider/earnings",
+        component: EarningsDashboard,
+      },
+      {
+        title: "My Profile",
+        url: "/rider/profile",
+        component: Profile,
       },
     ],
   },
