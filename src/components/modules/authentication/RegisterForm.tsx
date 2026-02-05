@@ -17,6 +17,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +32,7 @@ import Password from "@/components/ui/Password";
 import { useRegisterMutation } from "@/redux/features/auth/auth.api";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
+import config from "@/config";
 
 const registerSchema = z
   .object({
@@ -39,6 +47,7 @@ const registerSchema = z
     confirmPassword: z
       .string()
       .min(8, { message: "Confirm Password must be at least 8 characters" }),
+    role: z.enum(["rider", "driver"], { message: "Please select a role" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -55,6 +64,7 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
       email: "",
       password: "",
       confirmPassword: "",
+      role: "rider",
     },
   });
 
@@ -65,15 +75,18 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
       name: data.name,
       email: data.email,
       password: data.password,
+      role: data.role,
     };
     try {
       const result = await register(userInfo).unwrap();
       console.log("Registration successful:", result);
-      toast.success("Registration successful!");
+      toast.success("Registration successful! Please verify your email.");
       navigate("/verify", { state: data.email });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration failed:", error);
-      toast.error("Registration failed. Please try again.");
+      const errorMessage =
+        error?.data?.message || "Registration failed. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -149,11 +162,34 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    {/* <Input placeholder="Confirm Password" {...field} type="password" /> */}
                     <Password {...field} />
                   </FormControl>
                   <FormDescription className="sr-only">
-                    This is your public display name.
+                    Confirm your password
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Your Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="rider">Rider</SelectItem>
+                      <SelectItem value="driver">Driver</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Choose whether you want to ride or drive with SwiftRide
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -163,15 +199,28 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
               Register
             </Button>
           </form>
-          <button className="w-full">
+          <div className="relative my-4 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+            <span className="relative z-10 bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+          <Button
+            onClick={() => window.open(`${config.baseUrl}/auth/google`)}
+            type="button"
+            variant="outline"
+            className="w-full cursor-pointer"
+          >
+            Register with Google
+          </Button>
+          <div className="mt-4 text-center text-sm">
             Already have an account?
             <Link
               to="/login"
-              className="mt-4 ml-2 inline-block text-sm text-primary hover:underline"
+              className="ml-2 inline-block text-primary hover:underline"
             >
               Login
             </Link>
-          </button>
+          </div>
         </Form>
       </CardContent>
     </Card>

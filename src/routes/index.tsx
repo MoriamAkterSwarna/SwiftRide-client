@@ -9,12 +9,13 @@ import Home from "@/pages/Home";
 import Features from "@/pages/Features";
 import Contact from "@/pages/Contact";
 import FAQ from "@/pages/FAQ";
+import GoogleCallback from "@/pages/GoogleCallback";
 import { generateRoutes } from "@/utils/generateRoutes";
 
 import { createBrowserRouter, Navigate } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
 import { userSidebarItems } from "./userSidebarItems";
-import { riderSidebarItems } from "./riderSidebarItems";
+import { riderSidebarItems } from "./driverSidebarItems";
 import Unauthorized from "@/pages/Unauthorized";
 import { withAuth } from "@/utils/withAuth";
 import type { TRole } from "@/types";
@@ -68,9 +69,9 @@ export const router = createBrowserRouter([
   },
   {
     Component: withAuth(DashboardLayout, role.rider as TRole),
-    path: "/rider",
+    path: "/driver",
     children: [
-      { index: true, element: <Navigate to="/rider/manage-rides" /> },
+      { index: true, element: <Navigate to="/driver/manage-rides" /> },
       ...generateRoutes(riderSidebarItems),
     ],
   },
@@ -85,6 +86,10 @@ export const router = createBrowserRouter([
   {
     Component: Verify,
     path: "/verify",
+  },
+  {
+    Component: GoogleCallback,
+    path: "/auth/google/callback",
   },
   {
     Component: Unauthorized,

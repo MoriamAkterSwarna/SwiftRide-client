@@ -24,6 +24,7 @@ const axiosBaseQuery =
         params,
         headers,
       });
+      // Return the full response data structure without double wrapping
       return { data: result.data };
     } catch (axiosError) {
       const err = axiosError as AxiosError;

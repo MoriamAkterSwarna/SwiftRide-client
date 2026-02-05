@@ -29,7 +29,7 @@ import Password from "@/components/ui/Password";
 import config from "@/config";
 
 const loginSchema = z.object({
-  email: z.email({ message: "Please enter a valid email" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters" }),
@@ -40,7 +40,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const [login] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -50,36 +50,51 @@ export function LoginForm({
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+  const onSubmit = async (formData: z.infer<typeof loginSchema>) => {
     try {
-      const result = await login(data).unwrap();
-      console.log("Login successful:", result?.data);
+      const result = await login(formData).unwrap();
+      console.log("Login response:", result);
 
-      if (result?.data?.user?.isVerified) {
+      if (!result?.data?.user) {
+        throw new Error("Invalid response structure - missing user data");
+      }
+
+      if (result.data.user?.isVerified) {
         toast.success("Login successful!");
-        navigate("/");
+        const role = result.data.user?.role?.toLowerCase();
+        if (role === "admin" || role === "super_admin") {
+          navigate("/admin");
+        } else if (role === "driver") {
+          navigate("/rider");
+        } else {
+          navigate("/user");
+        }
       } else {
         toast.error(
           "Your account is not verified. Please verify your account.",
         );
-        navigate("/verify", { state: data.email });
+        navigate("/verify", { state: { email: formData.email } });
       }
     } catch (error: any) {
-      console.log(error.data.message);
       console.error("Login failed:", error);
-
-      if (error.data.message === "Invalid credentials") {
-        toast.error(error.data.message);
-      }
+      const errorMessage =
+        error?.data?.message || error?.message || "Login failed. Please try again.";
 
       if (
-        error.data.message ===
+        errorMessage ===
         "Your account is not verified. Please verify your account."
       ) {
-        toast.error(error.data.message);
-        navigate("/verify", { state: data.email });
+        toast.error(errorMessage);
+        navigate("/verify", { state: { email: formData.email } });
+      } else {
+        toast.error(errorMessage);
       }
     }
+  };
+
+  const handleGoogleLogin = () => {
+    // Backend will set HTTP-only cookies and redirect
+    window.location.href = `${config.baseUrl}/auth/google`;
   };
 
   return (
@@ -131,8 +146,8 @@ export function LoginForm({
                 )}
               />
 
-              <Button className="w-full" type="submit">
-                Sign In
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
           </Form>
@@ -142,20 +157,20 @@ export function LoginForm({
             </span>
           </div>
 
-          {/*//* http://localhost:5000/api/v1/auth/google */}
           <Button
-            onClick={() => window.open(`${config.baseUrl}/auth/google`)}
+            onClick={handleGoogleLogin}
             type="button"
             variant="outline"
             className="w-full cursor-pointer"
+            disabled={isLoading}
           >
             Login with Google
           </Button>
 
-          <button className="w-full">
+          <button className="w-full text-left">
             Don't have an account?
             <Link
-              className="mt-4 ml-2 inline-block text-sm text-primary hover:underline"
+              className="ml-2 inline-block text-sm text-primary hover:underline"
               to="/register"
             >
               {" "}

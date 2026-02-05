@@ -20,6 +20,6 @@ export const baseApi = createApi({
 
   // }),
 
-  tagTypes: ["USER", "RIDE", "DIVISION", "DISTRICT", "RIDE_TYPE"],
+  tagTypes: ["USER", "RIDE", "DIVISION", "DISTRICT", "RIDE_TYPE", "DRIVER"],
   endpoints: () => ({}),
 });

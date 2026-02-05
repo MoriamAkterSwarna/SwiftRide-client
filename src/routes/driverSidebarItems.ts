@@ -1,22 +1,38 @@
 import RequestRide from "@/pages/Rider/RequestRide";
 import RideHistory from "@/pages/Rider/RideHistory";
 import EarningsDashboard from "@/pages/Rider/EarningsDashboard";
+import ManageRides from "@/pages/Rider/ManageRides";
 import Profile from "@/pages/User/Profile";
 import type { ISidebarItem } from "@/types";
 
 export const riderSidebarItems: ISidebarItem[] = [
   {
-    title: "Rides",
+    title: "Driver",
     items: [
       {
         title: "Request Ride",
-        url: "/rider/request-ride",
+        url: "/driver/request-ride",
         component: RequestRide,
       },
       {
+        title: "Manage Rides",
+        url: "/driver/manage-rides",
+        component: ManageRides,
+      },
+      {
         title: "Ride History",
-        url: "/rider/ride-history",
+        url: "/driver/ride-history",
         component: RideHistory,
+      },
+    ],
+  },
+  {
+    title: "Earnings",
+    items: [
+      {
+        title: "Dashboard",
+        url: "/driver/earnings",
+        component: EarningsDashboard,
       },
     ],
   },
@@ -24,13 +40,8 @@ export const riderSidebarItems: ISidebarItem[] = [
     title: "Account",
     items: [
       {
-        title: "Earnings Dashboard",
-        url: "/rider/earnings",
-        component: EarningsDashboard,
-      },
-      {
         title: "My Profile",
-        url: "/rider/profile",
+        url: "/driver/profile",
         component: Profile,
       },
     ],

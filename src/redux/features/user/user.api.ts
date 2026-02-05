@@ -28,7 +28,8 @@ export const userApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // Driver specific profile
+    // Driver specific profile 
+
     updateDriverProfile: builder.mutation({
       query: (data) => ({
         url: "/driver/profile",
@@ -99,7 +100,7 @@ export const userApi = baseApi.injectEndpoints({
         if (role) params.append("role", role);
         if (status) params.append("status", status);
         return {
-          url: `/admin/users?${params.toString()}`,
+          url: `/user/all-users?${params.toString()}`,
           method: "GET",
         };
       },
@@ -108,34 +109,90 @@ export const userApi = baseApi.injectEndpoints({
 
     blockUser: builder.mutation({
       query: (userId) => ({
-        url: `/admin/users/${userId}/block`,
+        url: `/user/${userId}/block`,
         method: "PATCH",
       }),
-      invalidatesTags: ["USER"],
+      // invalidatesTags: ["USER"],
     }),
 
     unblockUser: builder.mutation({
       query: (userId) => ({
-        url: `/admin/users/${userId}/unblock`,
+        url: `/user/${userId}/unblock`,
         method: "PATCH",
       }),
-      invalidatesTags: ["USER"],
+      // invalidatesTags: ["USER"],
     }),
 
     approveDriver: builder.mutation({
       query: (driverId) => ({
-        url: `/admin/drivers/${driverId}/approve`,
+        url: `/driver/${driverId}/approve`,
         method: "PATCH",
       }),
-      invalidatesTags: ["USER"],
+      invalidatesTags: ["USER", "DRIVER"],
     }),
 
     suspendDriver: builder.mutation({
       query: (driverId) => ({
-        url: `/admin/drivers/${driverId}/suspend`,
+        url: `/driver/${driverId}/suspend`,
         method: "PATCH",
       }),
-      invalidatesTags: ["USER"],
+      invalidatesTags: ["USER", "DRIVER"],
+    }),
+
+    // Admin driver management
+    getAllDrivers: builder.query({
+      query: ({ page = 1, limit = 10, search, status }) => {
+        const params = new URLSearchParams();
+        params.append("page", page);
+        params.append("limit", limit);
+        if (search) params.append("search", search);
+        if (status) params.append("status", status);
+        return {
+          url: `/driver/all-drivers?${params.toString()}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["USER", "DRIVER"],
+    }),
+
+    getDriverDetails: builder.query({
+      query: (driverId: string) => ({
+        url: `/driver/${driverId}`,
+        method: "GET",
+      }),
+      providesTags: ["USER"],
+    }),
+
+    // Statistics and analytics
+    getUserStats: builder.query({
+      query: () => ({
+        url: "/admin/stats/users",
+        method: "GET",
+      }),
+      providesTags: ["USER"],
+    }),
+
+    getDriverStats: builder.query({
+      query: () => ({
+        url: "/admin/stats/drivers",
+        method: "GET",
+      }),
+      providesTags: ["USER"],
+    }),
+
+    getPendingDriverRequests: builder.query({
+      query: () => ({
+        url: "/user/driver-requests",
+        method: "GET",
+      }),
+      providesTags: ["USER", "DRIVER"],
+    }),
+    rejectDriver: builder.mutation({
+      query: (driverId) => ({
+        url: `/driver/${driverId}/reject`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["USER", "DRIVER"],
     }),
   }),
 });
@@ -154,6 +211,12 @@ export const {
   useGetAllUsersQuery,
   useBlockUserMutation,
   useUnblockUserMutation,
-  
+  useApproveDriverMutation,
   useSuspendDriverMutation,
+  useGetAllDriversQuery,
+  useGetDriverDetailsQuery,
+  useGetUserStatsQuery,
+  useGetDriverStatsQuery,
+  useGetPendingDriverRequestsQuery,
+  useRejectDriverMutation,
 } = userApi;

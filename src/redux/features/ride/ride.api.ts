@@ -46,6 +46,7 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["RIDE"],
     }),
+
     getRides: builder.query<IOtpResponse<IRide[]>, Record<string, any>>({
       query: (params: any) => ({
         url: "/ride",
@@ -54,7 +55,57 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       providesTags: ["RIDE"],
     }),
-     getEarningsData: builder.query({
+
+    getRideById: builder.query<IOtpResponse<IRide>, string>({
+      query: (id: string) => ({
+        url: `/ride/${id}`,
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    updateRide: builder.mutation({
+      query: ({ id, data }: { id: string; data: any }) => ({
+        url: `/ride/${id}`,
+        method: "PATCH",
+        data: data,
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    acceptRideRequest: builder.mutation({
+      query: ({ id }: { id: string }) => ({
+        url: `/ride/${id}/accept`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    rejectRideRequest: builder.mutation({
+      query: ({ id }: { id: string }) => ({
+        url: `/ride/${id}/reject`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    cancelRide: builder.mutation({
+      query: ({ id }: { id: string }) => ({
+        url: `/ride/${id}/cancel`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    estimateFare: builder.mutation({
+      query: (data: any) => ({
+        url: "/ride/fare/estimate",
+        method: "POST",
+        data: data,
+      }),
+    }),
+
+    getEarningsData: builder.query({
       query: ({ period }) => ({
         url: "/ride/earnings",
         method: "GET",
@@ -79,6 +130,23 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       providesTags: ["RIDE"],
     }),
+
+    getRideRequests: builder.query({
+      query: (params?: any) => ({
+        url: "/ride/requests",
+        method: "GET",
+        params: params,
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getOngoingRides: builder.query({
+      query: () => ({
+        url: "/ride/ongoing",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
   }),
 });
 
@@ -88,7 +156,15 @@ export const {
   useDeleteRideTypeMutation,
   useCreateRideMutation,
   useGetRidesQuery,
+  useGetRideByIdQuery,
+  useUpdateRideMutation,
+  useAcceptRideRequestMutation,
+  useRejectRideRequestMutation,
+  useCancelRideMutation,
+  useEstimateFareMutation,
   useGetEarningsDataQuery,
   useGetRideHistoryQuery,
   useGetRideAnalyticsQuery,
+  useGetRideRequestsQuery,
+  useGetOngoingRidesQuery,
 } = rideApi;

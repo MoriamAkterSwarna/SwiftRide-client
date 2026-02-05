@@ -80,7 +80,9 @@ const Verify = () => {
       console.log(res);
       if (res.success) {
         toast.success(res.message, { id: toastId });
-        navigate("/");
+        
+        // Navigate to login after verification
+        navigate("/login");
       }
     } catch (error) {
       // const errorMessage =

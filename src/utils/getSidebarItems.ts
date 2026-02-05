@@ -1,7 +1,7 @@
 import { role } from "@/constants/role";
 import { adminSidebarItems } from "@/routes/adminSidebarItems";
 import { userSidebarItems } from "@/routes/userSidebarItems";
-import { riderSidebarItems } from "@/routes/riderSidebarItems";
+import { riderSidebarItems } from "@/routes/driverSidebarItems";
 import type { TRole } from "@/types";
 
 export const getSidebarItems = (userRole: TRole) => {

@@ -1,77 +1,120 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate } from "react-router";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useApplyAsDriverMutation } from "@/redux/features/user/user.api";
 import { useGetUserProfileQuery } from "@/redux/features/user/user.api";
-import { Car, FileText, AlertCircle } from "lucide-react";
+import { Car, FileText, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const driverApplicationSchema = z.object({
+  vehicleType: z.enum(["Car", "Bike"]),
+  vehicleModel: z
+    .string()
+    .min(1, "Vehicle model is required")
+    .min(3, "Vehicle model must be at least 3 characters"),
+  vehiclePlateNumber: z
+    .string()
+    .min(1, "Vehicle plate number is required")
+    .regex(/^[A-Z]{2}-\d{2}-\d{4}$/, "Plate number format should be like DH-01-1234"),
+  drivingLicense: z
+    .string()
+    .min(1, "Driving license is required")
+    .min(5, "Driving license must be valid"),
+});
+
+type DriverApplicationFormValues = z.infer<typeof driverApplicationSchema>;
 
 const BecomeDriver = () => {
   const navigate = useNavigate();
-  const { data: userProfile } = useGetUserProfileQuery({});
-  const [applyAsDriver, { isLoading }] = useApplyAsDriverMutation();
+  
+  // Query user profile - cookies will be sent automatically
+  const { data: profileResponse, isLoading: isLoadingProfile, error: profileError } =
+    useGetUserProfileQuery(undefined);
 
-  const [formData, setFormData] = useState({
-    vehicleType: "Car",
-    vehicleModel: "",
-    vehiclePlateNumber: "",
-    drivingLicense: "",
+  // Extract user data
+  const userProfile = profileResponse?.data || profileResponse;
+
+  console.log("BecomeDriver Debug:", {
+    profileResponse,
+    profileError,
+    userProfile,
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const [applyAsDriver, { isLoading }] = useApplyAsDriverMutation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<DriverApplicationFormValues>({
+    resolver: zodResolver(driverApplicationSchema),
+    defaultValues: {
+      vehicleType: "Car",
+      vehicleModel: "",
+      vehiclePlateNumber: "",
+      drivingLicense: "",
+    },
+  });
 
-    // Validation
-    if (
-      !formData.vehicleModel ||
-      !formData.vehiclePlateNumber ||
-      !formData.drivingLicense
-    ) {
-      toast.error("Please fill in all required fields");
+  const onSubmit = async (data: DriverApplicationFormValues) => {
+    
+    const userId = userProfile?.data?._id;
+    console.log("Submitting driver application with data:", {
+      userId,
+      ...data,
+    });
+    
+    if (!userId) {
+      toast.error("Unable to determine user ID. Please log in again.");
+      navigate("/login");
       return;
     }
 
     try {
-      const response = await applyAsDriver({
-        user: userProfile?.data?._id,
-        vehicleType: formData.vehicleType,
-        vehicleModel: formData.vehicleModel,
-        vehiclePlateNumber: formData.vehiclePlateNumber,
-        drivingLicense: formData.drivingLicense,
+      const result = await applyAsDriver({
+        user: userId,
+        vehicleType: data.vehicleType,
+        vehicleModel: data.vehicleModel,
+        vehiclePlateNumber: data.vehiclePlateNumber,
+        drivingLicense: data.drivingLicense,
       }).unwrap();
 
-      toast.success(
-        "Application submitted successfully! Awaiting admin approval."
-      );
-      setFormData({
-        vehicleType: "Car",
-        vehicleModel: "",
-        vehiclePlateNumber: "",
-        drivingLicense: "",
-      });
-      setTimeout(() => navigate("/user/profile"), 2000);
+      if (result?.data || result?.success) {
+        toast.success(
+          "Application submitted successfully! Awaiting admin approval."
+        );
+        form.reset();
+        setTimeout(() => navigate("/user/profile"), 2000);
+      }
     } catch (error: any) {
-      toast.error(
-        error?.data?.message || "Failed to submit driver application"
-      );
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to submit driver application";
+      toast.error(errorMessage);
       console.error("Error:", error);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-8 mb-8 text-white">
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      <div className="bg-linear-to-r from-blue-600 to-blue-800 rounded-lg p-8 mb-8 text-white">
         <div className="flex items-center gap-4">
           <Car size={40} />
           <div>
@@ -124,153 +167,213 @@ const BecomeDriver = () => {
           Driver Application Form
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Personal Information (Read-only) */}
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              Personal Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={userProfile?.data?.name || ""}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 disabled:opacity-60"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={userProfile?.data?.email || ""}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 disabled:opacity-60"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={userProfile?.data?.phone || ""}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 disabled:opacity-60"
-                />
-              </div>
-            </div>
+        {isLoadingProfile ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="animate-spin mr-2" />
+            <p>Loading your profile...</p>
           </div>
-
-          {/* Vehicle Information */}
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              Vehicle Information
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="vehicleType"
-                  value={formData.vehicleType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                >
-                  <option value="Car">Car</option>
-                  <option value="Bike">Bike</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle Model <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="vehicleModel"
-                  value={formData.vehicleModel}
-                  onChange={handleChange}
-                  placeholder="e.g., Toyota Corolla 2020"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle Plate Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="vehiclePlateNumber"
-                  value={formData.vehiclePlateNumber}
-                  onChange={handleChange}
-                  placeholder="e.g., DH-01-1234"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Documentation */}
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">Documentation</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Driving License Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="drivingLicense"
-                value={formData.drivingLicense}
-                onChange={handleChange}
-                placeholder="Enter your driving license number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                required
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                Make sure your driving license is valid and active
-              </p>
-            </div>
-          </div>
-
-          {/* Terms & Conditions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-gray-700">
-              By submitting this application, you agree to our{" "}
-              <a href="#" className="text-blue-600 hover:underline font-medium">
-                Terms of Service
-              </a>{" "}
-              and confirm that all information provided is accurate and truthful.
+        ) : profileError ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-red-700">
+              Error loading profile. Please log in again.
             </p>
+            <button
+              onClick={() => navigate("/login")}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Go to Login
+            </button>
           </div>
+        ) : !userProfile?.data?._id ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-red-700">
+              Unable to load your profile. Please try again.
+            </p>
+            <button
+              onClick={() => navigate("/login")}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Go to Login
+            </button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Personal Information (Read-only) */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={userProfile?.data?.name || "Not loaded"}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-900 disabled:opacity-75"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={userProfile?.data?.email || "Not loaded"}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-900 disabled:opacity-75"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          {/* Submit Button */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => navigate("/user/profile")}
-              className="flex-1 border-2 border-gray-300 text-gray-900 py-3 rounded-lg font-semibold hover:border-gray-400 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Submitting..." : "Submit Application"}
-            </button>
-          </div>
-        </form>
+              {/* Vehicle Information */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Vehicle Information
+                </h3>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="vehicleType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Vehicle Type <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vehicle type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Car">Car</SelectItem>
+                            <SelectItem value="Bike">Bike</SelectItem>
+                            
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vehicleModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Vehicle Model <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Toyota Corolla 2020"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vehiclePlateNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Vehicle Plate Number{" "}
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., DH-01-1234"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Documentation */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">
+                  Documentation
+                </h3>
+                <FormField
+                  control={form.control}
+                  name="drivingLicense"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Driving License Number{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your driving license number"
+                          {...field}
+                        />
+                      </FormControl>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Make sure your driving license is valid and active
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Terms & Conditions */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  By submitting this application, you agree to our{" "}
+                  <a href="#" className="text-blue-600 hover:underline font-medium">
+                    Terms of Service
+                  </a>{" "}
+                  and confirm that all information provided is accurate and
+                  truthful.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => navigate("/user/profile")}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Application"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </div>
 
       {/* Requirements */}
