@@ -139,6 +139,15 @@ export const userApi = baseApi.injectEndpoints({
       invalidatesTags: ["USER", "DRIVER"],
     }),
 
+    updateUserRole: builder.mutation({
+      query: ({ userId, role }) => ({
+        url: `/user/${userId}/role`,
+        method: "PATCH",
+        data: { role },
+      }),
+      invalidatesTags: ["USER", "DRIVER"],
+    }),
+
     // Admin driver management
     getAllDrivers: builder.query({
       query: ({ page = 1, limit = 10, search, status }) => {
@@ -213,6 +222,7 @@ export const {
   useUnblockUserMutation,
   useApproveDriverMutation,
   useSuspendDriverMutation,
+  useUpdateUserRoleMutation,
   useGetAllDriversQuery,
   useGetDriverDetailsQuery,
   useGetUserStatsQuery,

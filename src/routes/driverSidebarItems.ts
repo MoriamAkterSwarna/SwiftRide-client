@@ -1,19 +1,15 @@
-import RequestRide from "@/pages/Rider/RequestRide";
-import RideHistory from "@/pages/Rider/RideHistory";
-import EarningsDashboard from "@/pages/Rider/EarningsDashboard";
-import ManageRides from "@/pages/Rider/ManageRides";
+
+import RideHistory from "@/pages/Driver/RideHistory";
+import EarningsDashboard from "@/pages/Driver/EarningsDashboard";
+import ManageRides from "@/pages/Driver/ManageRides";
 import Profile from "@/pages/User/Profile";
 import type { ISidebarItem } from "@/types";
 
-export const riderSidebarItems: ISidebarItem[] = [
+export const driverSidebarItems: ISidebarItem[] = [
   {
     title: "Driver",
     items: [
-      {
-        title: "Request Ride",
-        url: "/driver/request-ride",
-        component: RequestRide,
-      },
+
       {
         title: "Manage Rides",
         url: "/driver/manage-rides",

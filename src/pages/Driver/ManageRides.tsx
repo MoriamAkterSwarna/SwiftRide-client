@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { useGetRideRequestsQuery, useAcceptRideRequestMutation, useRejectRideRequestMutation } from "@/redux/features/ride/ride.api";
+import { useAcceptRideRequestMutation, useRejectRideRequestMutation, useGetAvailableRidesQuery } from "@/redux/features/ride/ride.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +13,17 @@ import {
 } from "@/components/ui/dialog";
 import { MapPin, Clock, DollarSign, Phone, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
-
 export default function ManageRides() {
   const [selectedRideRequest, setSelectedRideRequest] = useState<any>(null);
-  const { data: requestsData, isLoading, refetch } = useGetRideRequestsQuery({});
+  const { data, isLoading, refetch } = useGetAvailableRidesQuery({});
   const [acceptRide, { isLoading: acceptLoading }] = useAcceptRideRequestMutation();
   const [rejectRide, { isLoading: rejectLoading }] = useRejectRideRequestMutation();
 
-  const rideRequests = requestsData?.data || [];
+  const rideRequests = Array.isArray(data?.data)
+    ? data.data
+    : data?.data?.rides || [];
+
+  console.log(data, 'requestsData');
 
   const handleAcceptRide = async (rideId: string) => {
     try {
@@ -61,7 +64,7 @@ export default function ManageRides() {
         </p>
       </div>
 
-      {rideRequests.length === 0 ? (
+      {rideRequests?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-lg text-muted-foreground mb-4">No pending ride requests</p>
@@ -72,7 +75,7 @@ export default function ManageRides() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {rideRequests.map((request: any) => (
+          {rideRequests?.map((request: any) => (
             <Card key={request._id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -81,7 +84,7 @@ export default function ManageRides() {
                       {request.rider?.name || "Unknown Rider"}
                     </CardTitle>
                     <CardDescription>
-                      {request.rider?.email || "No email"}
+                      {request.rider?.phone || "No phone"}
                     </CardDescription>
                   </div>
                   <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">

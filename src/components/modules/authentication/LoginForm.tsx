@@ -61,14 +61,7 @@ export function LoginForm({
 
       if (result.data.user?.isVerified) {
         toast.success("Login successful!");
-        const role = result.data.user?.role?.toLowerCase();
-        if (role === "admin" || role === "super_admin") {
-          navigate("/admin");
-        } else if (role === "driver") {
-          navigate("/rider");
-        } else {
-          navigate("/user");
-        }
+        navigate("/");
       } else {
         toast.error(
           "Your account is not verified. Please verify your account.",

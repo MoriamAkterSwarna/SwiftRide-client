@@ -14,7 +14,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
         <SidebarGroupContent className="relative">
           <Label htmlFor="search" className="sr-only">
             Search
-          </Label>
+          </Label> 
           <SidebarInput
             id="search"
             placeholder="Search the docs..."

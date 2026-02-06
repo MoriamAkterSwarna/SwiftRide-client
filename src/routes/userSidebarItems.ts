@@ -1,23 +1,29 @@
-import RequestRide from "@/pages/Rider/RequestRide";
-import RideHistory from "@/pages/Rider/RideHistory";
+
 import Profile from "@/pages/User/Profile";
 import BecomeDriver from "@/pages/User/BecomeDriver";
 import type { ISidebarItem } from "@/types";
+import AddRide from "@/pages/User/AddRide";
+
+import MyRideHistory from "@/pages/User/MyRideHistory";
+
 
 export const userSidebarItems: ISidebarItem[] = [
   {
     title: "Rides",
     items: [
-      {
-        title: "Request Ride",
-        url: "/user/request-ride",
-        component: RequestRide,
+
+       {
+        title: "Add Ride",
+        url: "/user/add-ride",
+        component: AddRide,
       },
       {
-        title: "Ride History",
-        url: "/user/ride-history",
-        component: RideHistory,
+        title: "My Rides",
+        url: "/user/my-rides",
+        component: MyRideHistory,
       },
+     
+
     ],
   },
   {

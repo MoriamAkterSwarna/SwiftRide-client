@@ -196,7 +196,7 @@ export default function RideHistory() {
       ) : (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <p className="text-gray-600 text-lg mb-4">No rides found</p>
-          <a href="/rider/request-ride" className="text-blue-600 hover:text-blue-700 font-medium">
+          <a href="/user/add-ride" className="text-blue-600 hover:text-blue-700 font-medium">
             Book a new ride
           </a>
         </div>

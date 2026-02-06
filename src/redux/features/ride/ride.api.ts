@@ -38,18 +38,20 @@ export const rideApi = baseApi.injectEndpoints({
     }),
 
     // Ride endpoints
-    createRide: builder.mutation<IOtpResponse<IRide>, Partial<IRide>>({
+    createRide: builder.mutation<IOtpResponse<IRide>, any>({
       query: (data: any) => ({
-        url: "/ride",
+        url: "/ride/create",
         method: "POST",
         data: data,
+        // Let axios automatically set Content-Type for FormData with boundary
+        headers: data instanceof FormData ? {} : { 'Content-Type': 'application/json' },
       }),
       invalidatesTags: ["RIDE"],
     }),
 
     getRides: builder.query<IOtpResponse<IRide[]>, Record<string, any>>({
       query: (params: any) => ({
-        url: "/ride",
+        url: "/ride-request/request",
         method: "GET",
         params: params,
       }),
@@ -75,15 +77,15 @@ export const rideApi = baseApi.injectEndpoints({
 
     acceptRideRequest: builder.mutation({
       query: ({ id }: { id: string }) => ({
-        url: `/ride/${id}/accept`,
-        method: "PATCH",
+        url: `/ride-request/${id}/accept`,
+        method: "POST",
       }),
       invalidatesTags: ["RIDE"],
     }),
 
     rejectRideRequest: builder.mutation({
       query: ({ id }: { id: string }) => ({
-        url: `/ride/${id}/reject`,
+        url: `/ride-request/${id}/cancel`,
         method: "PATCH",
       }),
       invalidatesTags: ["RIDE"],
@@ -99,7 +101,15 @@ export const rideApi = baseApi.injectEndpoints({
 
     estimateFare: builder.mutation({
       query: (data: any) => ({
-        url: "/ride/fare/estimate",
+        url: "/fare/estimate",
+        method: "POST",
+        data: data,
+      }),
+    }),
+
+    requestRide: builder.mutation({
+      query: (data: any) => ({
+        url: "/ride/create",
         method: "POST",
         data: data,
       }),
@@ -116,7 +126,7 @@ export const rideApi = baseApi.injectEndpoints({
 
     getRideHistory: builder.query({
       query: (params: any) => ({
-        url: "/ride/history",
+        url: "/ride-request/my-history",
         method: "GET",
         params: params,
       }),
@@ -133,7 +143,7 @@ export const rideApi = baseApi.injectEndpoints({
 
     getRideRequests: builder.query({
       query: (params?: any) => ({
-        url: "/ride/requests",
+        url: "/driver/all-rides-pending",
         method: "GET",
         params: params,
       }),
@@ -147,6 +157,40 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       providesTags: ["RIDE"],
     }),
+
+    getUserRide: builder.query({
+      query: (params: any) => ({
+        url: "/ride/my-rides",
+        method: "GET",
+        params: params,
+      }),
+      providesTags: ["RIDE"],
+      transformResponse: (response: any) => ({
+        data: response.data,
+        meta: response.meta,
+      }),
+    }),
+
+    // get rides data for Driver
+    // /available-rides 
+    
+    getAvailableRides: builder.query({
+      query: () => ({
+        url: "/ride-request/available-rides",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getUserActiveRideRequests: builder.query({
+      query: () => ({
+        url: "/ride-request/user/active",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+
   }),
 });
 
@@ -162,9 +206,13 @@ export const {
   useRejectRideRequestMutation,
   useCancelRideMutation,
   useEstimateFareMutation,
+  useRequestRideMutation,
   useGetEarningsDataQuery,
   useGetRideHistoryQuery,
   useGetRideAnalyticsQuery,
   useGetRideRequestsQuery,
   useGetOngoingRidesQuery,
+  useGetUserRideQuery,
+  useGetAvailableRidesQuery,
+  useGetUserActiveRideRequestsQuery,
 } = rideApi;

@@ -9,11 +9,12 @@ export default function Profile() {
   const [updateProfile] = useUpdateUserProfileMutation();
   const [changePassword] = useChangePasswordMutation();
 
+  console.log(profileData, "profile data")
   const [activeTab, setActiveTab] = useState<"profile" | "password" | "emergency">("profile");
   const [formData, setFormData] = useState({
-    name: profileData?.data?.name || "",
-    email: profileData?.data?.email || "",
-    phone: profileData?.data?.phone || "",
+    name: profileData?.data?.data?.name || "",
+    email: profileData?.data?.data?.email || "",
+    phone: profileData?.data?.data?.phone || "",
   });
 
   const [passwordData, setPasswordData] = useState({

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { useGetAllUsersQuery, useBlockUserMutation, useUnblockUserMutation } from "@/redux/features/user/user.api";
+import { useGetAllUsersQuery, useBlockUserMutation, useUnblockUserMutation, useUpdateUserRoleMutation } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, Lock, Unlock, Loader2 } from "lucide-react";
+import { Search, Lock, Unlock, Loader2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 
 export default function UserManagement() {
-   const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -49,6 +49,7 @@ export default function UserManagement() {
 
   const [blockUser, { isLoading: blockLoading }] = useBlockUserMutation();
   const [unblockUser, { isLoading: unblockLoading }] = useUnblockUserMutation();
+  const [updateUserRole, { isLoading: roleUpdateLoading }] = useUpdateUserRoleMutation();
 
   const totalUsers = usersData?.total || 0;
   const totalPages = Math.ceil(totalUsers / limit);
@@ -76,6 +77,16 @@ export default function UserManagement() {
       refetch();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to block user");
+    }
+  };
+
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    try {
+      await updateUserRole({ userId, role: newRole }).unwrap();
+      toast.success(`User role updated to ${newRole} successfully`);
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update user role");
     }
   };
 
@@ -187,11 +198,10 @@ export default function UserManagement() {
                         <TableCell className="capitalize">{user.role}</TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              isActive
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {isActive ? "Active" : "Blocked"}
                           </span>
@@ -201,6 +211,21 @@ export default function UserManagement() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
+                            <Select
+                              value={user.role}
+                              onValueChange={(newRole) => handleUpdateUserRole(user._id, newRole)}
+                              disabled={roleUpdateLoading}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USER">User</SelectItem>
+                                <SelectItem value="DRIVER">Driver</SelectItem>
+                                <SelectItem value="ADMIN">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+
                             {isActive ? (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>

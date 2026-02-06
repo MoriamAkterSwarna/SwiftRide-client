@@ -1,29 +1,30 @@
-import App from "@/App";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import MainLayout from "@/components/layout/MainLayout";
 
-import About from "@/pages/About";
+import About from "@/pages/Public/About";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Verify from "@/pages/Verify";
-import Home from "@/pages/Home";
-import Features from "@/pages/Features";
-import Contact from "@/pages/Contact";
-import FAQ from "@/pages/FAQ";
+
+import Features from "@/pages/Public/Features";
+import Contact from "@/pages/Public/Contact";
+import FAQ from "@/pages/Public/FAQ";
 import GoogleCallback from "@/pages/GoogleCallback";
 import { generateRoutes } from "@/utils/generateRoutes";
 
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
 import { userSidebarItems } from "./userSidebarItems";
-import { riderSidebarItems } from "./driverSidebarItems";
+import { driverSidebarItems } from "./driverSidebarItems";
 import Unauthorized from "@/pages/Unauthorized";
 import { withAuth } from "@/utils/withAuth";
 import type { TRole } from "@/types";
 import { role } from "@/constants/role";
+import Home from "@/pages/Home";
 
 export const router = createBrowserRouter([
   {
-    Component: App,
+    Component: () => <MainLayout><Outlet /></MainLayout>,
     path: "/",
     children: [
       {
@@ -63,7 +64,7 @@ export const router = createBrowserRouter([
     Component: withAuth(DashboardLayout, role.user as TRole),
     path: "/user",
     children: [
-      { index: true, element: <Navigate to="/user/request-ride" /> },
+      { index: true, element: <Navigate to="/user/add-ride" /> },
       ...generateRoutes(userSidebarItems),
     ],
   },
@@ -72,7 +73,7 @@ export const router = createBrowserRouter([
     path: "/driver",
     children: [
       { index: true, element: <Navigate to="/driver/manage-rides" /> },
-      ...generateRoutes(riderSidebarItems),
+      ...generateRoutes(driverSidebarItems),
     ],
   },
   {
@@ -91,8 +92,8 @@ export const router = createBrowserRouter([
     Component: GoogleCallback,
     path: "/auth/google/callback",
   },
-  {
-    Component: Unauthorized,
-    path: "/unauthorized",
-  },
+  // {
+  //   Component: Unauthorized,
+  //   path: "/unauthorized",
+  // },
 ]);

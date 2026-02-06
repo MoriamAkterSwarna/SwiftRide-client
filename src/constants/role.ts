@@ -4,4 +4,5 @@ export const role = {
   rider: "RIDER",
   user: "USER",
   public: "PUBLIC",
+  driver: "DRIVER",
 } as const;
