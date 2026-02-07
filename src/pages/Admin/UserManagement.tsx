@@ -39,7 +39,7 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  const { data: usersData, isLoading, refetch } = useGetAllUsersQuery({
+  const { data: usersData, isLoading } = useGetAllUsersQuery({
     page,
     limit,
     search: searchTerm || undefined,
@@ -51,8 +51,8 @@ export default function UserManagement() {
   const [unblockUser, { isLoading: unblockLoading }] = useUnblockUserMutation();
   const [updateUserRole, { isLoading: roleUpdateLoading }] = useUpdateUserRoleMutation();
 
-  const totalUsers = usersData?.total || 0;
-  const totalPages = Math.ceil(totalUsers / limit);
+  const totalUsers = usersData?.meta?.total || usersData?.total || 0;
+  const totalPages = totalUsers > 0 ? Math.ceil(totalUsers / limit) : 1;
   const users = usersData?.data || [];
 
   const handleSearch = (value: string) => {
@@ -64,7 +64,6 @@ export default function UserManagement() {
     try {
       await unblockUser(userId).unwrap();
       toast.success("User unblocked successfully");
-      refetch();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to unblock user");
     }
@@ -74,7 +73,6 @@ export default function UserManagement() {
     try {
       await blockUser(userId).unwrap();
       toast.success("User blocked successfully");
-      refetch();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to block user");
     }
@@ -84,7 +82,6 @@ export default function UserManagement() {
     try {
       await updateUserRole({ userId, role: newRole }).unwrap();
       toast.success(`User role updated to ${newRole} successfully`);
-      refetch();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to update user role");
     }
@@ -167,7 +164,7 @@ export default function UserManagement() {
         <CardHeader>
           <CardTitle>Users List</CardTitle>
           <CardDescription>
-            Showing {users.length} of {totalUsers} users
+            Total users: {totalUsers} | Showing {users.length} users per page
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,7 +211,7 @@ export default function UserManagement() {
                             <Select
                               value={user.role}
                               onValueChange={(newRole) => handleUpdateUserRole(user._id, newRole)}
-                              disabled={roleUpdateLoading}
+                              disabled={roleUpdateLoading || user.role === "SUPER_ADMIN"}
                             >
                               <SelectTrigger className="w-32">
                                 <SelectValue />
@@ -223,6 +220,7 @@ export default function UserManagement() {
                                 <SelectItem value="USER">User</SelectItem>
                                 <SelectItem value="DRIVER">Driver</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                               </SelectContent>
                             </Select>
 
@@ -232,7 +230,7 @@ export default function UserManagement() {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    disabled={blockLoading}
+                                    disabled={blockLoading || user.role === "SUPER_ADMIN"}
                                   >
                                     <Lock className="h-4 w-4 mr-1" />
                                     Block
@@ -260,7 +258,7 @@ export default function UserManagement() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleUnblockUser(user._id)}
-                                disabled={unblockLoading}
+                                disabled={unblockLoading || user.role === "SUPER_ADMIN"}
                               >
                                 <Unlock className="h-4 w-4 mr-1" />
                                 Unblock
@@ -282,25 +280,139 @@ export default function UserManagement() {
             </Table>
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+          <div className="mt-6 space-y-4">
+            {/* Rows per page selector */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, totalUsers)} of {totalUsers} users
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Rows per page:</span>
+                <Select value={limit.toString()} onValueChange={(val) => {
+                  setLimit(Number(val));
+                  setPage(1);
+                }}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </Button>
+
+            {/* Pagination controls */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {page} of {totalPages} ({totalUsers} total users)
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newPage = Math.max(1, page - 1);
+                    setPage(newPage);
+                  }}
+                  disabled={page === 1 || isLoading}
+                >
+                  Previous
+                </Button>
+
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {totalPages <= 7 ? (
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                      <Button
+                        key={p}
+                        variant={p === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(p)}
+                        disabled={isLoading}
+                        className="w-9 h-9 p-0"
+                      >
+                        {p}
+                      </Button>
+                    ))
+                  ) : (
+                    <>
+                      <Button
+                        variant={page === 1 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(1)}
+                        disabled={isLoading}
+                        className="w-9 h-9 p-0"
+                      >
+                        1
+                      </Button>
+
+                      {page > 3 && <span className="px-1 text-muted-foreground">...</span>}
+
+                      {page > 2 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(page - 1)}
+                          disabled={isLoading}
+                          className="w-9 h-9 p-0"
+                        >
+                          {page - 1}
+                        </Button>
+                      )}
+
+                      {page > 1 && page < totalPages && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="w-9 h-9 p-0"
+                        >
+                          {page}
+                        </Button>
+                      )}
+
+                      {page < totalPages - 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(page + 1)}
+                          disabled={isLoading}
+                          className="w-9 h-9 p-0"
+                        >
+                          {page + 1}
+                        </Button>
+                      )}
+
+                      {page < totalPages - 2 && <span className="px-1 text-muted-foreground">...</span>}
+
+                      {totalPages > 1 && (
+                        <Button
+                          variant={page === totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPage(totalPages)}
+                          disabled={isLoading}
+                          className="w-9 h-9 p-0"
+                        >
+                          {totalPages}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newPage = Math.min(totalPages, page + 1);
+                    setPage(newPage);
+                  }}
+                  disabled={page === totalPages || totalPages === 0 || isLoading}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

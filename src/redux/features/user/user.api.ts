@@ -112,7 +112,7 @@ export const userApi = baseApi.injectEndpoints({
         url: `/user/${userId}/block`,
         method: "PATCH",
       }),
-      // invalidatesTags: ["USER"],
+      invalidatesTags: ["USER"],
     }),
 
     unblockUser: builder.mutation({
@@ -120,7 +120,7 @@ export const userApi = baseApi.injectEndpoints({
         url: `/user/${userId}/unblock`,
         method: "PATCH",
       }),
-      // invalidatesTags: ["USER"],
+      invalidatesTags: ["USER"],
     }),
 
     approveDriver: builder.mutation({

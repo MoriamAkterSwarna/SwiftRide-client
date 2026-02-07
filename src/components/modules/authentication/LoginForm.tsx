@@ -61,7 +61,18 @@ export function LoginForm({
 
       if (result.data.user?.isVerified) {
         toast.success("Login successful!");
-        navigate("/");
+        
+        // Redirect based on user role
+        const userRole = result.data.user?.role?.toUpperCase();
+        if (userRole === "SUPER_ADMIN" || userRole === "ADMIN") {
+          navigate("/admin");
+        } else if (userRole === "USER") {
+          navigate("/user");
+        } else if (userRole === "DRIVER" || userRole === "RIDER") {
+          navigate("/driver");
+        } else {
+          navigate("/");
+        }
       } else {
         toast.error(
           "Your account is not verified. Please verify your account.",

@@ -20,8 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
-import { useGetUserProfileQuery } from '@/redux/features/user/user.api';
-import { useLogoutMutation } from '@/redux/features/auth/auth.api';
+import { useUserInfoQuery, useLogoutMutation } from '@/redux/features/auth/auth.api';
 import { useAppSelector } from '@/redux/hook';
 
 interface NavigationItem {
@@ -54,15 +53,8 @@ export default function Navigation() {
   const location = useLocation();
   const [logoutMutation] = useLogoutMutation();
 
-  const auth = useAppSelector((state: any) => state.auth);
-  const user = auth?.user;
-  const hasValidSession = document.cookie.split('; ').some(row => row.startsWith('accessToken='));
-
-  const { data: profileData } = useGetUserProfileQuery(undefined, {
-    skip: !hasValidSession,
-  });
-
-  const currentUser = profileData?.data || user;
+  const { data: userInfo } = useUserInfoQuery(undefined);
+  const currentUser = userInfo?.data?.data;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -165,7 +157,7 @@ export default function Navigation() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-4">
-            {hasValidSession && currentUser ? (
+            {currentUser ? (
               <div className="flex items-center gap-4">
                 {/* Status Badge */}
                 <div className="hidden sm:flex items-center gap-2">
@@ -251,7 +243,7 @@ export default function Navigation() {
           <div className="md:hidden border-t py-4">
             <nav className="flex flex-col gap-2">
               {renderNavItems(publicNavItems, true)}
-              {hasValidSession && currentUser && (
+              {currentUser && (
                 <>
                   <div className="border-t pt-2 mt-2">
                     <Button

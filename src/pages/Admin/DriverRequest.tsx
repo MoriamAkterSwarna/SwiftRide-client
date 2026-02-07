@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
+
 export default function DriverRequests() {
   const { data, isLoading, refetch } = useGetPendingDriverRequestsQuery({});
   const [approveDriver, { isLoading: isApproving }] = useApproveDriverMutation();

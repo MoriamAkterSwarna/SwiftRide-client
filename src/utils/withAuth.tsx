@@ -21,9 +21,9 @@ export const withAuth = (
         ? requiredRole.includes(userRole)
         : requiredRole === userRole;
 
-      // if (!isAuthorized) {
-      //   return <Navigate to="/unauthorized" />;
-      // }
+      if (!isAuthorized) {
+        return <Navigate to="/unauthorized" />;
+      }
     }
 
     return <Component />;

@@ -9,6 +9,16 @@ import MyRideHistory from "@/pages/User/MyRideHistory";
 
 export const userSidebarItems: ISidebarItem[] = [
   {
+    title: "Navigation",
+    items: [
+      {
+        title: "Home",
+        url: "/",
+        isExternal: true,
+      },
+    ],
+  },
+  {
     title: "Rides",
     items: [
 

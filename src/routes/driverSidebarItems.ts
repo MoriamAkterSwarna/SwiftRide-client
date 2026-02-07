@@ -7,6 +7,16 @@ import type { ISidebarItem } from "@/types";
 
 export const driverSidebarItems: ISidebarItem[] = [
   {
+    title: "Navigation",
+    items: [
+      {
+        title: "Home",
+        url: "/",
+        isExternal: true,
+      },
+    ],
+  },
+  {
     title: "Driver",
     items: [
 

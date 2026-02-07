@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
-import { useGetRidesQuery } from "@/redux/features/ride/ride.api";
+import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/redux/store";
+import { useGetRideRequestsQuery, useUpdateRideStatusMutation, useAssignDriverMutation, rideApi } from "@/redux/features/ride/ride.api";
+import { useGetAllDriversQuery } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -26,19 +30,22 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Search, Eye, Loader2, MapPin, Clock, DollarSign, User } from "lucide-react";
 
 export default function RideManagement() {
+  const dispatch = useDispatch<AppDispatch>();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [selectedRide, setSelectedRide] = useState<any>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedDriver, setSelectedDriver] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const { data: ridesData, isLoading } = useGetRidesQuery({
+  const { data: ridesData, isLoading, refetch: refetchRides } = useGetRideRequestsQuery({
     page,
     limit,
     search: searchTerm || undefined,
@@ -46,23 +53,229 @@ export default function RideManagement() {
     date: dateFilter || undefined,
   });
 
+  const { data: driversData, isLoading: driversLoading } = useGetAllDriversQuery({ 
+    page: 1, 
+    limit: 100, 
+    status: "approved" // Get all drivers instead of filtering by status
+  });
+  const [updateRideStatus, { isLoading: statusUpdating }] = useUpdateRideStatusMutation();
+  const [assignDriver, { isLoading: driverAssigning }] = useAssignDriverMutation();
+
   const rides = ridesData?.data || [];
-  const totalRides = rides.length;
+  const totalRides = ridesData?.meta?.total || rides.length;
   const totalPages = Math.ceil(totalRides / limit);
+  
+  // Handle different driver data structures from API
+  const drivers = driversData?.data?.drivers || driversData?.data || [];
+
+  // console.log("Full Rides Data:", ridesData);
+  // console.log("Rides array:", rides);
+  // console.log("First ride driver object:", rides[0]?.driver);
+  // Debug logging
+  if (rides.length > 0) {
+    console.log("=== RIDES UPDATED ===");
+    console.log("First ride full data:", rides[0]);
+    console.log("First ride driver:", rides[0].driver);
+    console.log("First ride driver type:", typeof rides[0].driver);
+    console.log("First ride driver structure:", JSON.stringify(rides[0].driver, null, 2));
+  }
+  console.log("Drivers list:", drivers);
+  console.log("Full API Response (ridesData):", ridesData);
+  console.log("Total rides from meta:", ridesData?.meta?.total);
+  console.log("=== END DEBUG ===");
+  // console.log("Drivers Processed:", drivers);
+  // console.log("Number of drivers:", drivers.length);
+
+  // Track modal state changes
+  useEffect(() => {
+    console.log("📱 Modal state changed:", {
+      isModalOpen,
+      selectedRideId: selectedRide?._id,
+      selectedDriver,
+    });
+  }, [isModalOpen, selectedRide?._id, selectedDriver]);
+
+  // Track rides data changes
+  useEffect(() => {
+    if (rides.length > 0) {
+      console.log("🔄 Rides data refreshed!");
+      console.log("  - Total rides:", rides.length);
+      console.log("  - First ride driver:", rides[0].driver);
+      
+      // If modal is open and ride was updated, check if driver changed
+      if (isModalOpen && selectedRide) {
+        const updatedRide = rides.find((r: any) => r._id === selectedRide._id);
+        if (updatedRide && updatedRide.driver !== selectedRide.driver) {
+          console.log("  ⚠️ IMPORTANT: Ride in table was updated!");
+          console.log("     Old driver:", selectedRide.driver);
+          console.log("     New driver:", updatedRide.driver);
+        }
+      }
+    }
+  }, [rides, isModalOpen, selectedRide]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setPage(1);
   };
 
+  const openRideModal = (ride: any) => {
+    console.log("=== OPENING MODAL ===");
+    console.log("Ride object from table:", ride);
+    console.log("Ride ID:", ride._id);
+    console.log("Ride driver field:", ride.driver);
+    console.log("Ride driver type:", typeof ride.driver);
+    console.log("Ride full structure:", JSON.stringify(ride, null, 2));
+    
+    setSelectedRide(ride);
+    setSelectedStatus(ride.status?.toLowerCase() || "");
+    
+    // Extract driver ID with proper handling for different data structures
+    let driverId = "";
+    if (ride.driver) {
+      if (typeof ride.driver === 'string') {
+        driverId = ride.driver;
+        console.log("✓ Driver is string ID:", driverId);
+      } else if (ride.driver?._id) {
+        driverId = ride.driver._id;
+        console.log("✓ Driver is object with _id:", driverId);
+        console.log("  Full driver object:", JSON.stringify(ride.driver, null, 2));
+      } else if (ride.driver?.user?._id) {
+        driverId = ride.driver.user._id;
+        console.log("✓ Driver is object with user._id:", driverId);
+        console.log("  Full driver object:", JSON.stringify(ride.driver, null, 2));
+      }
+    } else {
+      console.log("✗ No driver in ride object");
+    }
+    
+    console.log("Final selected driver ID to set:", driverId);
+    console.log("Drivers available from state:", drivers.length, "drivers");
+    if (drivers.length > 0) {
+      console.log("First driver in list:", JSON.stringify(drivers[0], null, 2));
+    }
+    
+    setSelectedDriver(driverId);
+    setIsModalOpen(true);
+    console.log("=== MODAL OPENED - isModalOpen set to true ===");
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedRide?._id || !selectedStatus) {
+      toast.error("Please select a status");
+      return;
+    }
+    try {
+      const result = await updateRideStatus({ id: selectedRide._id, status: selectedStatus }).unwrap();
+      toast.success("Ride status updated successfully");
+      
+      // Update selectedRide with the full ride data from API response
+      const updatedRide = result?.data || result;
+      setSelectedRide(updatedRide);
+      setSelectedStatus(updatedRide.status?.toLowerCase() || selectedStatus);
+      
+      // Update the rides table data in Redux cache
+      const queryArgs = {
+        page,
+        limit,
+        search: searchTerm || undefined,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        date: dateFilter || undefined,
+      };
+
+      // Manually patch the getRideRequests cache with updated ride data
+      dispatch(
+        rideApi.util.updateQueryData("getRideRequests", queryArgs, (draft: any) => {
+          if (draft && Array.isArray(draft.data)) {
+            const rideIndex = draft.data.findIndex((r: any) => r._id === selectedRide._id);
+            if (rideIndex !== -1) {
+              draft.data[rideIndex] = updatedRide;
+            }
+          }
+        })
+      );
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update ride status");
+    }
+  };
+
+  const handleDriverAssignment = async () => {
+    if (!selectedRide?._id || !selectedDriver) {
+      toast.error("Please select a driver");
+      return;
+    }
+    try {
+      console.log("=== ASSIGNMENT START ===");
+      const result = await assignDriver({ rideId: selectedRide._id, driverId: selectedDriver }).unwrap();
+      console.log("✓ Assignment API response:", result);
+      
+      // Extract the updated ride from response
+      const updatedRide = result?.data || result;
+      console.log("✓ Updated ride object:", JSON.stringify(updatedRide, null, 2));
+      console.log("✓ Driver in updated ride:", updatedRide.driver);
+      
+      // Extract driver ID
+      let assignedDriverId = selectedDriver;
+      if (typeof updatedRide.driver === 'string') {
+        assignedDriverId = updatedRide.driver;
+      } else if (updatedRide.driver?._id) {
+        assignedDriverId = updatedRide.driver._id;
+      } else if (updatedRide.driver?.user?._id) {
+        assignedDriverId = updatedRide.driver.user._id;
+      }
+      console.log("✓ Extracted driver ID:", assignedDriverId);
+      
+      // Update local state immediately
+      setSelectedRide(updatedRide);
+      setSelectedDriver(assignedDriverId);
+      
+      toast.success("Driver assigned successfully");
+      
+      // Build complete query args with NO undefined values
+      const cleanQueryArgs: any = {
+        page,
+        limit,
+      };
+      if (searchTerm) cleanQueryArgs.search = searchTerm;
+      if (statusFilter && statusFilter !== "ALL") cleanQueryArgs.status = statusFilter;
+      if (dateFilter) cleanQueryArgs.date = dateFilter;
+      
+      console.log("✓ Clean query args:", cleanQueryArgs);
+      
+      // Invalidate the cache to force refetch
+      dispatch(rideApi.util.invalidateTags(["RIDE"]));
+      console.log("✓ Cache invalidated");
+      
+      // Refetch with exact same parameters
+      console.log("✓ Refetching with params:", cleanQueryArgs);
+      const refetchResult = await refetchRides();
+      console.log("✓ Refetch completed:", refetchResult);
+      
+      // Close modal after successful update
+      setTimeout(() => {
+        setIsModalOpen(false);
+        console.log("=== ASSIGNMENT COMPLETE ===");
+      }, 1000);
+    } catch (error: any) {
+      console.error("❌ Assignment error:", error);
+      toast.error(error?.data?.message || "Failed to assign driver");
+    }
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
+      case "completed":
         return "bg-green-100 text-green-800";
-      case "ONGOING":
+      case "in_transit":
+      case "ongoing":
         return "bg-blue-100 text-blue-800";
-      case "CANCELLED":
+      case "cancelled":
         return "bg-red-100 text-red-800";
+      case "accepted":
+        return "bg-purple-100 text-purple-800";
+      case "picked_up":
+        return "bg-indigo-100 text-indigo-800";
       default:
         return "bg-yellow-100 text-yellow-800";
     }
@@ -108,10 +321,12 @@ export default function RideManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="ONGOING">Ongoing</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="requested">Requested</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="picked_up">Picked Up</SelectItem>
+                <SelectItem value="in_transit">In Transit</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
 
@@ -169,7 +384,26 @@ export default function RideManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {ride.driver?.name || "Not Assigned"}
+                        {(() => {
+                          console.log("Rendering driver for ride:", ride._id, "driver:", ride.driver);
+                          if (!ride.driver) return "Not Assigned";
+                          
+                          // driver now directly references User after schema fix
+                          if (typeof ride.driver === 'object') {
+                            const driverName = ride.driver?.name;
+                            console.log("Driver is User object, name:", driverName);
+                            return driverName || "Not Assigned";
+                          }
+                          
+                          // If driver is just an ID string, try to find in drivers list
+                          if (typeof ride.driver === 'string') {
+                            const driverInfo = drivers.find((d: any) => d._id === ride.driver);
+                            console.log("Driver is string ID, found driver info:", driverInfo);
+                            return driverInfo?.name || driverInfo?.user?.name || "Not Assigned";
+                          }
+                          
+                          return "Not Assigned";
+                        })()}
                       </TableCell>
                       <TableCell className="max-w-xs">
                         <div className="flex items-start">
@@ -197,7 +431,7 @@ export default function RideManagement() {
                             ride.status
                           )}`}
                         >
-                          {ride.status}
+                          {ride.status?.replace(/_/g, ' ').toUpperCase()}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -213,138 +447,13 @@ export default function RideManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setSelectedRide(ride)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Ride Details</DialogTitle>
-                              <DialogDescription>
-                                Complete information about the ride
-                              </DialogDescription>
-                            </DialogHeader>
-
-                            {selectedRide && (
-                              <div className="space-y-6">
-                                {/* Rider & Driver Info */}
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h3 className="font-semibold mb-2">
-                                      Rider Information
-                                    </h3>
-                                    <div className="space-y-1 text-sm">
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Name:
-                                        </span>{" "}
-                                        {selectedRide.rider?.name || "N/A"}
-                                      </p>
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Email:
-                                        </span>{" "}
-                                        {selectedRide.rider?.email || "N/A"}
-                                      </p>
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Phone:
-                                        </span>{" "}
-                                        {selectedRide.rider?.phone || "N/A"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h3 className="font-semibold mb-2">
-                                      Driver Information
-                                    </h3>
-                                    <div className="space-y-1 text-sm">
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Name:
-                                        </span>{" "}
-                                        {selectedRide.driver?.name || "N/A"}
-                                      </p>
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Email:
-                                        </span>{" "}
-                                        {selectedRide.driver?.email || "N/A"}
-                                      </p>
-                                      <p>
-                                        <span className="text-muted-foreground">
-                                          Rating:
-                                        </span>{" "}
-                                        {selectedRide.driver?.rating || "N/A"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Location Info */}
-                                <div>
-                                  <h3 className="font-semibold mb-2">
-                                    Route Information
-                                  </h3>
-                                  <div className="space-y-2 text-sm">
-                                    <p>
-                                      <span className="text-muted-foreground">
-                                        Pickup:
-                                      </span>{" "}
-                                      {selectedRide.pickupLocation?.address ||
-                                        selectedRide.from?.name ||
-                                        "N/A"}
-                                    </p>
-                                    <p>
-                                      <span className="text-muted-foreground">
-                                        Dropoff:
-                                      </span>{" "}
-                                      {selectedRide.dropoffLocation?.address ||
-                                        selectedRide.to?.name ||
-                                        "N/A"}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Ride Details */}
-                                <div className="grid grid-cols-3 gap-4">
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Fare
-                                    </p>
-                                    <p className="text-lg font-semibold">
-                                      ${selectedRide.fare || selectedRide.price}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Status
-                                    </p>
-                                    <p className="text-lg font-semibold">
-                                      {selectedRide.status}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Date
-                                    </p>
-                                    <p className="text-lg font-semibold">
-                                      {new Date(
-                                        selectedRide.createdAt
-                                      ).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openRideModal(ride)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -383,6 +492,271 @@ export default function RideManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Ride Details Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Ride Details</DialogTitle>
+            <DialogDescription>
+              Complete information about the ride
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedRide && (
+            <div className="space-y-6">
+              {/* Rider & Driver Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Rider Information
+                  </h3>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-muted-foreground">
+                        Name:
+                      </span>{" "}
+                      {selectedRide.rider?.name || "N/A"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">
+                        Email:
+                      </span>{" "}
+                      {selectedRide.rider?.email || "N/A"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">
+                        Phone:
+                      </span>{" "}
+                      {selectedRide.rider?.phone || "N/A"}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Driver Information
+                  </h3>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-muted-foreground">
+                        Name:
+                      </span>{" "}
+                      {(() => {
+                        // driver now directly references User
+                        const driverName = selectedRide.driver?.name;
+                        if (driverName) return driverName;
+                        
+                        // If not in selectedRide, check the drivers list using selectedDriver ID
+                        if (selectedDriver && drivers.length > 0) {
+                          const driver = drivers.find((d: any) => d._id === selectedDriver);
+                          return driver?.name || driver?.user?.name || "Not Assigned";
+                        }
+                        return "Not Assigned";
+                      })()}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">
+                        Email:
+                      </span>{" "}
+                      {(() => {
+                        const driverEmail = selectedRide.driver?.email;
+                        if (driverEmail) return driverEmail;
+                        
+                        if (selectedDriver && drivers.length > 0) {
+                          const driver = drivers.find((d: any) => d._id === selectedDriver);
+                          return driver?.email || driver?.user?.email || "N/A";
+                        }
+                        return "N/A";
+                      })()}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">
+                        Phone:
+                      </span>{" "}
+                      {(() => {
+                        const driverPhone = selectedRide.driver?.phone;
+                        if (driverPhone) return driverPhone;
+                        
+                        if (selectedDriver && drivers.length > 0) {
+                          const driver = drivers.find((d: any) => d._id === selectedDriver);
+                          return driver?.phone || driver?.user?.phone || "N/A";
+                        }
+                        return "N/A";
+                      })()}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">
+                        Rating:
+                      </span>{" "}
+                      {selectedRide.driver?.rating || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Info */}
+              <div>
+                <h3 className="font-semibold mb-2">
+                  Route Information
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="text-muted-foreground">
+                      Pickup:
+                    </span>{" "}
+                    {selectedRide.pickupLocation?.address ||
+                      selectedRide.from?.name ||
+                      "N/A"}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">
+                      Dropoff:
+                    </span>{" "}
+                    {selectedRide.dropoffLocation?.address ||
+                      selectedRide.to?.name ||
+                      "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Ride Details */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Fare
+                  </p>
+                  <p className="text-lg font-semibold">
+                    ${selectedRide.fare || selectedRide.price}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Status
+                  </p>
+                  <p className="text-lg font-semibold capitalize">
+                    {selectedRide.status?.replace(/_/g, ' ')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Date
+                  </p>
+                  <p className="text-lg font-semibold">
+                    {new Date(
+                      selectedRide.createdAt
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Update Section */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Manage Ride</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Update Status
+                    </label>
+                    <Select
+                      value={selectedStatus}
+                      onValueChange={setSelectedStatus}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="requested">Requested</SelectItem>
+                        <SelectItem value="accepted">Accepted</SelectItem>
+                        <SelectItem value="picked_up">Picked Up</SelectItem>
+                        <SelectItem value="in_transit">In Transit</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleStatusUpdate}
+                      disabled={statusUpdating || selectedStatus?.toLowerCase() === selectedRide.status?.toLowerCase()}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {statusUpdating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Status"
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Assign Driver
+                    </label>
+                    <Select
+                      value={selectedDriver}
+                      onValueChange={setSelectedDriver}
+                      disabled={driversLoading || !drivers.length}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          driversLoading 
+                            ? "Loading drivers..." 
+                            : drivers.length === 0 
+                              ? "No drivers available" 
+                              : "Select driver"
+                        }>
+                          {selectedDriver && drivers.length > 0 ? (() => {
+                            const driver = drivers.find((d: any) => d.user?._id === selectedDriver);
+                            const driverName = driver?.name || driver?.user?.name || selectedRide?.driver?.name;
+                            const driverEmail = driver?.email || driver?.user?.email || selectedRide?.driver?.email;
+                            return driverName ? `${driverName}${driverEmail ? ` - ${driverEmail}` : ''}` : null;
+                          })() : null}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {drivers.length > 0 ? (
+                          drivers.map((driver: any) => {
+                            const driverName = driver.name || driver.user?.name || 'Unknown Driver';
+                            const driverEmail = driver.email || driver.user?.email || '';
+                            const driverUserId = driver.user?._id || driver._id;
+                            return (
+                              <SelectItem key={driver._id} value={driverUserId}>
+                                {driverName} {driverEmail && `- ${driverEmail}`}
+                              </SelectItem>
+                            );
+                          })
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            No drivers found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleDriverAssignment}
+                      disabled={driverAssigning || !selectedDriver || driversLoading}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {driverAssigning ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Assigning...
+                        </>
+                      ) : (
+                        "Assign Driver"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

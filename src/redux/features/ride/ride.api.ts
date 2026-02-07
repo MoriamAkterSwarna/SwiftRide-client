@@ -142,11 +142,22 @@ export const rideApi = baseApi.injectEndpoints({
     }),
 
     getRideRequests: builder.query({
-      query: (params?: any) => ({
-        url: "/driver/all-rides-pending",
-        method: "GET",
-        params: params,
-      }),
+      query: (params?: any) => {
+        console.log("Fetching rides with params:", params);
+        return {
+          url: "/ride-request",
+          method: "GET",
+          params: params,
+        };
+      },
+      onQueryStarted: async (arg, { queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          console.log("Ride requests API response:", data);
+        } catch (error) {
+          console.error("Ride requests API error:", error);
+        }
+      },
       providesTags: ["RIDE"],
     }),
 
@@ -190,6 +201,24 @@ export const rideApi = baseApi.injectEndpoints({
       providesTags: ["RIDE"],
     }),
 
+    updateRideStatus: builder.mutation({
+      query: ({ id, status }: { id: string; status: string }) => ({
+        url: `/ride-request/${id}/status`,
+        method: "PATCH",
+        data: { status },
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    assignDriver: builder.mutation({
+      query: ({ rideId, driverId }: { rideId: string; driverId: string }) => ({
+        url: `/ride-request/${rideId}/assign-driver`,
+        method: "PATCH",
+        data: { driverId },
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+    
 
   }),
 });
@@ -215,4 +244,6 @@ export const {
   useGetUserRideQuery,
   useGetAvailableRidesQuery,
   useGetUserActiveRideRequestsQuery,
+  useUpdateRideStatusMutation,
+  useAssignDriverMutation,
 } = rideApi;
