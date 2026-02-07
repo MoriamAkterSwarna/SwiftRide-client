@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { useAcceptRideRequestMutation, useRejectRideRequestMutation, useGetAvailableRidesQuery } from "@/redux/features/ride/ride.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +16,9 @@ import {
 import { MapPin, Clock, DollarSign, Phone, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 export default function ManageRides() {
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [selectedRideRequest, setSelectedRideRequest] = useState<any>(null);
-  const { data, isLoading, refetch } = useGetAvailableRidesQuery({});
+  const { data, isLoading, refetch } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
   const [acceptRide, { isLoading: acceptLoading }] = useAcceptRideRequestMutation();
   const [rejectRide, { isLoading: rejectLoading }] = useRejectRideRequestMutation();
 

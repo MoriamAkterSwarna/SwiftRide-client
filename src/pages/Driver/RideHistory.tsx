@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { MapPin, Calendar, DollarSign, Clock, Star } from "lucide-react";
 import { useGetRideHistoryQuery } from "@/redux/features/ride/ride.api";
 
 export default function RideHistory() {
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [filters, setFilters] = useState({
@@ -18,7 +20,7 @@ export default function RideHistory() {
     status: filters.status || undefined,
     startDate: filters.startDate || undefined,
     endDate: filters.endDate || undefined,
-  });
+  }, { skip: !hasSessionHint });
 
   const rides = ridesData?.data || [];
   const totalPages = ridesData?.totalPages || 1;

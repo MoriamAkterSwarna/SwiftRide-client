@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
+import { useAppSelector } from "@/redux/hook";
 import { useGetAllUsersQuery, useBlockUserMutation, useUnblockUserMutation, useUpdateUserRoleMutation } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,19 +34,23 @@ import { Search, Lock, Unlock, Loader2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 
 export default function UserManagement() {
+  const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  const { data: usersData, isLoading } = useGetAllUsersQuery({
-    page,
-    limit,
-    search: searchTerm || undefined,
-    role: roleFilter === "ALL" ? undefined : roleFilter,
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-  });
+  const { data: usersData, isLoading } = useGetAllUsersQuery(
+    {
+      page,
+      limit,
+      search: searchTerm || undefined,
+      role: roleFilter === "ALL" ? undefined : roleFilter,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+    },
+    { skip: !hasSessionHint }
+  );
 
   const [blockUser, { isLoading: blockLoading }] = useBlockUserMutation();
   const [unblockUser, { isLoading: unblockLoading }] = useUnblockUserMutation();

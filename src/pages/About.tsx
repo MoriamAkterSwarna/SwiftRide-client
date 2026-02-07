@@ -1,5 +1,7 @@
 import { Award, Users, Target, Globe } from "lucide-react";
 
+
+
 export default function About() {
   const teamMembers = [
     {

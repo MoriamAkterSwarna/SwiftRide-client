@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate } from "react-router";
+import { useAppSelector } from "@/redux/hook";
 import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,10 +47,11 @@ type DriverApplicationFormValues = z.infer<typeof driverApplicationSchema>;
 
 const BecomeDriver = () => {
   const navigate = useNavigate();
+  const hasSessionHint = useAppSelector((state: any) => state.authSession.hasSession);
   
   // Query user profile - cookies will be sent automatically
   const { data: profileResponse, isLoading: isLoadingProfile, error: profileError } =
-    useGetUserProfileQuery(undefined);
+    useGetUserProfileQuery(undefined, { skip: !hasSessionHint });
 
   // Extract user data
   const userProfile = profileResponse?.data || profileResponse;

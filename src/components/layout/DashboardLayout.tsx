@@ -5,10 +5,22 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Outlet } from "react-router"
+import { Outlet, useNavigate } from "react-router"
+import { useEffect } from "react"
+import { useAppSelector } from "@/redux/hook"
 import DashboardHeader from "./DashboardHeader"
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
+  const hasSessionHint = useAppSelector(
+    (state) => state.authSession.hasSession,
+  );
+
+  useEffect(() => {
+    if (!hasSessionHint) {
+      navigate("/login");
+    }
+  }, [hasSessionHint, navigate]);
   return (
     <SidebarProvider>
       <AppSidebar />

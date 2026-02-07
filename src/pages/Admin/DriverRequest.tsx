@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useSelector } from "react-redux";
 import { useGetPendingDriverRequestsQuery, useApproveDriverMutation, useRejectDriverMutation } from "@/redux/features/user/user.api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,7 +16,8 @@ import { Car, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 
 export default function DriverRequests() {
-  const { data, isLoading, refetch } = useGetPendingDriverRequestsQuery({});
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
+  const { data, isLoading, refetch } = useGetPendingDriverRequestsQuery({}, { skip: !hasSessionHint });
   const [approveDriver, { isLoading: isApproving }] = useApproveDriverMutation();
   const [rejectDriver, { isLoading: isRejecting }] = useRejectDriverMutation();
 

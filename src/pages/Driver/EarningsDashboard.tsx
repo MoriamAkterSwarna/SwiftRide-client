@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { TrendingUp, DollarSign, Clock, Car } from "lucide-react";
 import { useGetEarningsDataQuery } from "@/redux/features/ride/ride.api";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function EarningsDashboard() {
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
-  const { data: earningsData } = useGetEarningsDataQuery({ period });
+  const { data: earningsData } = useGetEarningsDataQuery({ period }, { skip: !hasSessionHint });
 
   const chartData = earningsData?.data?.chartData || [
     { name: "Mon", earnings: 120 },

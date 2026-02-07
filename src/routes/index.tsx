@@ -11,6 +11,8 @@ import Contact from "@/pages/Public/Contact";
 import FAQ from "@/pages/Public/FAQ";
 import GoogleCallback from "@/pages/GoogleCallback";
 import { generateRoutes } from "@/utils/generateRoutes";
+import Settings from "@/pages/Settings";
+import Helpline from "@/pages/Helpline";
 
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
@@ -92,8 +94,16 @@ export const router = createBrowserRouter([
     Component: GoogleCallback,
     path: "/auth/google/callback",
   },
-  // {
-  //   Component: Unauthorized,
-  //   path: "/unauthorized",
-  // },
+  {
+    Component: Unauthorized,
+    path: "/unauthorized",
+  },
+  {
+    Component: withAuth(Settings, [role.user, role.driver, role.admin, role.superAdmin] as TRole[]),
+    path: "/settings",
+  },
+  {
+    Component: withAuth(Helpline, [role.user, role.driver, role.admin, role.superAdmin] as TRole[]),
+    path: "/help",
+  },
 ]);

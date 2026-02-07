@@ -21,7 +21,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 import { useUserInfoQuery, useLogoutMutation } from '@/redux/features/auth/auth.api';
-import { useAppSelector } from '@/redux/hook';
+import { clearSession } from '@/redux/features/auth/authSessionSlice';
+import { useAppDispatch, useAppSelector } from '@/redux/hook';
+import { baseApi } from '@/redux/baseApi';
 
 interface NavigationItem {
   name: string;
@@ -52,8 +54,14 @@ export default function Navigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [logoutMutation] = useLogoutMutation();
+  const dispatch = useAppDispatch();
 
-  const { data: userInfo } = useUserInfoQuery(undefined);
+  const hasSessionHint = useAppSelector(
+    (state) => state.authSession.hasSession,
+  );
+  const { data: userInfo } = useUserInfoQuery(undefined, {
+    skip: !hasSessionHint,
+  });
   const currentUser = userInfo?.data?.data;
 
   useEffect(() => {
@@ -67,10 +75,16 @@ export default function Navigation() {
   const handleLogout = async () => {
     try {
       await logoutMutation(undefined).unwrap();
+      localStorage.removeItem("sr_has_session");
+      dispatch(clearSession());
+      dispatch(baseApi.util.resetApiState());
       navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Still navigate even if logout API fails
+      localStorage.removeItem("sr_has_session");
+      dispatch(clearSession());
+      dispatch(baseApi.util.resetApiState());
+      // Still navigate to home even if logout API fails
       navigate('/');
     }
   };
@@ -157,7 +171,7 @@ export default function Navigation() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-4">
-            {currentUser ? (
+            {hasSessionHint && currentUser ? (
               <div className="flex items-center gap-4">
                 {/* Status Badge */}
                 <div className="hidden sm:flex items-center gap-2">
@@ -243,7 +257,7 @@ export default function Navigation() {
           <div className="md:hidden border-t py-4">
             <nav className="flex flex-col gap-2">
               {renderNavItems(publicNavItems, true)}
-              {currentUser && (
+              {hasSessionHint && currentUser && (
                 <>
                   <div className="border-t pt-2 mt-2">
                     <Button
@@ -269,6 +283,23 @@ export default function Navigation() {
                     </Button>
                   </div>
                 </>
+              )}
+              {!hasSessionHint && (
+                <div className="border-t pt-2 mt-2 flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button
+                    className="w-full"
+                    asChild
+                  >
+                    <Link to="/register">Sign Up</Link>
+                  </Button>
+                </div>
               )}
             </nav>
           </div>

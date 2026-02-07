@@ -37,6 +37,15 @@ export const rideApi = baseApi.injectEndpoints({
       invalidatesTags: ["RIDE_TYPE"],
     }),
 
+    updateRideType: builder.mutation({
+      query: ({ id, data }: { id: string; data: any }) => ({
+        url: `/ride/ride-type/${id}`,
+        method: "PATCH",
+        data: data,
+      }),
+      invalidatesTags: ["RIDE_TYPE"],
+    }),
+
     // Ride endpoints
     createRide: builder.mutation<IOtpResponse<IRide>, any>({
       query: (data: any) => ({
@@ -227,6 +236,7 @@ export const {
   useCreateRideTypeMutation,
   useGetRideTypesQuery,
   useDeleteRideTypeMutation,
+  useUpdateRideTypeMutation,
   useCreateRideMutation,
   useGetRidesQuery,
   useGetRideByIdQuery,

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -192,4 +193,12 @@
   font-size: 13px;
   line-height: 1.35;
   color: #0f172a;
+}
+
+.font-display {
+  font-family: "Fraunces", "Times New Roman", serif;
+}
+
+.font-body {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
 }

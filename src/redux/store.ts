@@ -2,11 +2,13 @@ import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "./baseApi";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import locationReducer from "./features/location/locationSlice";
+import authSessionReducer from "./features/auth/authSessionSlice";
 
 export const store = configureStore({
   reducer: { 
     [baseApi.reducerPath]: baseApi.reducer,
     location: locationReducer,
+    authSession: authSessionReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(baseApi.middleware),

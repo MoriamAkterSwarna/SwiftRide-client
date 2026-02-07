@@ -1,10 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { setSession } from "@/redux/features/auth/authSessionSlice";
+import { useAppDispatch } from "@/redux/hook";
 
 const GoogleCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const handleCallback = () => {
@@ -33,6 +36,8 @@ const GoogleCallback = () => {
         }
 
         toast.success("Login successful!");
+        localStorage.setItem("sr_has_session", "1");
+        dispatch(setSession());
         const role = user.role?.toLowerCase();
 
         if (role === "admin" || role === "super_admin") {
@@ -50,7 +55,7 @@ const GoogleCallback = () => {
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, dispatch]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

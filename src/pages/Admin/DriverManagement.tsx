@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import { useAppSelector } from "@/redux/hook";
 import { useGetAllDriversQuery, useApproveDriverMutation, useSuspendDriverMutation } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,17 +34,21 @@ import { Search, CheckCircle, XCircle, Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriverManagement() {
+  const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  const { data: driversData, isLoading, refetch } = useGetAllDriversQuery({
-    page,
-    limit,
-    search: searchTerm || undefined,
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-  });
+  const { data: driversData, isLoading, refetch } = useGetAllDriversQuery(
+    {
+      page,
+      limit,
+      search: searchTerm || undefined,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+    },
+    { skip: !hasSessionHint }
+  );
 
   console.log("Drivers Response:", driversData);
   console.log("Drivers Data:", driversData?.data[0]);

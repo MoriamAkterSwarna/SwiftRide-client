@@ -23,10 +23,12 @@ import {
   useLogoutMutation,
   useUserInfoQuery,
 } from "@/redux/features/auth/auth.api";
-import { useAppDispatch } from "@/redux/hook";
+import { clearSession } from "@/redux/features/auth/authSessionSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { toast } from "sonner";
 import { role } from "@/constants/role";
 import type { TRole } from "@/types";
+import { baseApi } from "@/redux/baseApi";
 
 // Hamburger icon component
 const HamburgerIcon = ({
@@ -107,7 +109,12 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     },
     ref,
   ) => {
-    const { data } = useUserInfoQuery(undefined);
+    const hasSessionHint = useAppSelector(
+      (state) => state.authSession.hasSession,
+    );
+    const { data } = useUserInfoQuery(undefined, {
+      skip: !hasSessionHint,
+    });
     const [logout] = useLogoutMutation();
     const navigate = useNavigate();
     console.log(data?.data?.data.email);
@@ -150,11 +157,15 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     const handleLogout = async () => {
       try {
         await logout(undefined).unwrap();
+        localStorage.removeItem("sr_has_session");
+        dispatch(clearSession());
         dispatch(authApi.util.resetApiState());
-        navigate("/login");
+          dispatch(baseApi.util.resetApiState());
+        navigate("/");
         toast.success("Logged out successfully!");
       } catch (error: any) {
         toast.error(error?.data?.message || "Logout failed");
+        navigate("/");
       }
     };
 
@@ -202,7 +213,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                             </NavigationMenuItem>
                           )}
 
-                          {link.role === data?.data?.data?.role && (
+                          {hasSessionHint && link.role === data?.data?.data?.role && (
                             <NavigationMenuItem asChild className="w-full">
                               <Link
                                 to={link.href ?? "/"}
@@ -239,7 +250,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                       const isVisible =
                         link.role === "PUBLIC" 
                         ||
-                        link.role === data?.data?.data?.role;
+                        (hasSessionHint && link.role === data?.data?.data?.role);
                       if (!isVisible) return null;
                       return (
                         <NavigationMenuItem key={index}>
@@ -269,7 +280,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           <div className="flex items-center gap-3">
             <ModeToggle />
 
-            {data?.data?.data?.email && (
+            {hasSessionHint && (
               <Button
                 onClick={handleLogout}
                 size="sm"
@@ -280,7 +291,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               </Button>
             )}
 
-            {!data?.data?.data?.email && (
+            {!hasSessionHint && (
               <Button
                 size="sm"
                 className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"

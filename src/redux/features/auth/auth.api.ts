@@ -25,7 +25,6 @@ export const authApi = baseApi.injectEndpoints({
         url: "/auth/logout",
         method: "POST",
       }),
-      invalidatesTags: ["USER"],
     }),
     sendOtp: builder.mutation({
       query: (userInfo) => ({
@@ -50,8 +49,16 @@ export const authApi = baseApi.injectEndpoints({
       providesTags: ["USER"],
     }),
 
+    updateUserInfo: builder.mutation({
+      query: (data) => ({
+        url: "/user/me",
+        method: "PATCH",
+        data,
+      }),
+      invalidatesTags: ["USER"],
+    }),
 
   }),
 });
-export const { useRegisterMutation, useLoginMutation, useSendOtpMutation, useVerifyOtpMutation , useUserInfoQuery, useLogoutMutation} =
+export const { useRegisterMutation, useLoginMutation, useSendOtpMutation, useVerifyOtpMutation , useUserInfoQuery, useLogoutMutation, useUpdateUserInfoMutation} =
   authApi;

@@ -1,4 +1,5 @@
 import { useUserInfoQuery } from "@/redux/features/auth/auth.api";
+import { useAppSelector } from "@/redux/hook";
 import type { TRole } from "@/types";
 
 import type { ComponentType } from "react";
@@ -9,7 +10,16 @@ export const withAuth = (
   requiredRole?: TRole | TRole[],
 ) => {
   return function AuthWrapper() {
-    const { data, isLoading } = useUserInfoQuery(undefined);
+    const hasSessionHint = useAppSelector(
+      (state) => state.authSession.hasSession,
+    );
+    const { data, isLoading } = useUserInfoQuery(undefined, {
+      skip: !hasSessionHint,
+    });
+
+    if (!hasSessionHint) {
+      return <Navigate to="/login" />;
+    }
 
     if (!isLoading && !data?.data?.data?.email) {
       return <Navigate to="/login" />;

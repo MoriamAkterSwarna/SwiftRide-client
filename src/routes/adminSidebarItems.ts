@@ -4,9 +4,11 @@ import AddRideType from "@/pages/Admin/RideType/AddRideType";
 import UserManagement from "@/pages/Admin/UserManagement";
 import DriverManagement from "@/pages/Admin/DriverManagement";
 import RideManagement from "@/pages/Admin/RideManagement";
+import Profile from "@/pages/User/Profile";
 
 import type { ISidebarItem } from "@/types";
 import { lazy } from "react";
+import { Home, BarChart3, Users, Car, MapPin, UserCog } from "lucide-react";
 
 const Analytics = lazy(() => import("@/pages/Admin/Analytics"));
 
@@ -18,6 +20,7 @@ export const adminSidebarItems: ISidebarItem[] = [
         title: "Home",
         url: "/",
         isExternal: true,
+        icon: Home,
       },
     ],
   },
@@ -28,6 +31,7 @@ export const adminSidebarItems: ISidebarItem[] = [
         title: "Analytics",
         url: "/admin/analytics",
         component: Analytics,
+        icon: BarChart3,
       },
     ],
   },
@@ -38,21 +42,25 @@ export const adminSidebarItems: ISidebarItem[] = [
         title: "Users",
         url: "/admin/users",
         component: UserManagement,
+        icon: Users,
       },
       {
         title: "Drivers",
         url: "/admin/drivers",
         component: DriverManagement,
+        icon: Car,
       },
       {
         title: "Rides",
         url: "/admin/rides",
         component: RideManagement,
+        icon: Car,
       },
       {
         title: "Driver Requests",
         url: "/admin/driver-requests",
         component: lazy(() => import("@/pages/Admin/DriverRequest")),
+        icon: Users,
       }
     ],
   },
@@ -63,16 +71,30 @@ export const adminSidebarItems: ISidebarItem[] = [
         title: "Ride Types",
         url: "/admin/add-ride-type",
         component: AddRideType,
+        icon: Car,
       },
       {
         title: "Divisions",
         url: "/admin/add-division",
         component: AddDivision,
+        icon: MapPin,
       },
       {
         title: "Districts",
         url: "/admin/add-district",
         component: AddDistrict,
+        icon: MapPin,
+      },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      {
+        title: "My Profile",
+        url: "/admin/profile",
+        component: Profile,
+        icon: UserCog,
       },
     ],
   },

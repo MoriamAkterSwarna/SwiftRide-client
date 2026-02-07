@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "@/redux/store";
 import { useGetRideRequestsQuery, useUpdateRideStatusMutation, useAssignDriverMutation, rideApi } from "@/redux/features/ride/ride.api";
 import { useGetAllDriversQuery } from "@/redux/features/user/user.api";
@@ -31,10 +31,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Eye, Loader2, MapPin, Clock, DollarSign, User } from "lucide-react";
+import { Search, Eye, Loader2, MapPin, Clock, DollarSign, User, Car } from "lucide-react";
 
 export default function RideManagement() {
   const dispatch = useDispatch<AppDispatch>();
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,19 +46,25 @@ export default function RideManagement() {
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const { data: ridesData, isLoading, refetch: refetchRides } = useGetRideRequestsQuery({
-    page,
-    limit,
-    search: searchTerm || undefined,
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-    date: dateFilter || undefined,
-  });
+  const { data: ridesData, isLoading, refetch: refetchRides } = useGetRideRequestsQuery(
+    {
+      page,
+      limit,
+      search: searchTerm || undefined,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      date: dateFilter || undefined,
+    },
+    { skip: !hasSessionHint }
+  );
 
-  const { data: driversData, isLoading: driversLoading } = useGetAllDriversQuery({ 
-    page: 1, 
-    limit: 100, 
-    status: "approved" // Get all drivers instead of filtering by status
-  });
+  const { data: driversData, isLoading: driversLoading } = useGetAllDriversQuery(
+    {
+      page: 1,
+      limit: 100,
+      status: "approved", // Get all drivers instead of filtering by status
+    },
+    { skip: !hasSessionHint }
+  );
   const [updateRideStatus, { isLoading: statusUpdating }] = useUpdateRideStatusMutation();
   const [assignDriver, { isLoading: driverAssigning }] = useAssignDriverMutation();
 
@@ -469,15 +476,16 @@ export default function RideManagement() {
           </div>
 
           {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+          <div className="p-6 border-t border-slate-200 flex items-center justify-between">
+            <div className="text-sm text-slate-600">
+              Page {page} of {totalPages} • {totalRides} total rides
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
+                className="rounded-xl border-slate-200 hover:bg-slate-50"
               >
                 Previous
               </Button>
@@ -485,6 +493,7 @@ export default function RideManagement() {
                 variant="outline"
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
+                className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 border-slate-900"
               >
                 Next
               </Button>
@@ -493,12 +502,13 @@ export default function RideManagement() {
         </CardContent>
       </Card>
 
+
       {/* Ride Details Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl rounded-3xl border-slate-200">
           <DialogHeader>
-            <DialogTitle>Ride Details</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-slate-800">Ride Details</DialogTitle>
+            <DialogDescription className="text-slate-600">
               Complete information about the ride
             </DialogDescription>
           </DialogHeader>
@@ -507,36 +517,36 @@ export default function RideManagement() {
             <div className="space-y-6">
               {/* Rider & Driver Info */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">
-                    Rider Information
-                  </h3>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">
-                        Name:
-                      </span>{" "}
-                      {selectedRide.rider?.name || "N/A"}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">
-                        Email:
-                      </span>{" "}
-                      {selectedRide.rider?.email || "N/A"}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">
-                        Phone:
-                      </span>{" "}
-                      {selectedRide.rider?.phone || "N/A"}
-                    </p>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-slate-800">Rider Information</h3>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Name:</span>
+                      <span className="font-medium text-slate-800">{selectedRide.rider?.name || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Email:</span>
+                      <span className="font-medium text-slate-800">{selectedRide.rider?.email || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Phone:</span>
+                      <span className="font-medium text-slate-800">{selectedRide.rider?.phone || "N/A"}</span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-2">
-                    Driver Information
-                  </h3>
-                  <div className="space-y-1 text-sm">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                      <Car className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-slate-800">Driver Information</h3>
+                  </div>
+                  <div className="space-y-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">
                         Name:
@@ -595,74 +605,69 @@ export default function RideManagement() {
               </div>
 
               {/* Location Info */}
-              <div>
-                <h3 className="font-semibold mb-2">
-                  Route Information
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <span className="text-muted-foreground">
-                      Pickup:
-                    </span>{" "}
-                    {selectedRide.pickupLocation?.address ||
-                      selectedRide.from?.name ||
-                      "N/A"}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">
-                      Dropoff:
-                    </span>{" "}
-                    {selectedRide.dropoffLocation?.address ||
-                      selectedRide.to?.name ||
-                      "N/A"}
-                  </p>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-semibold text-slate-800">Route Information</h3>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">A</div>
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Pickup Location</p>
+                      <p className="font-medium text-slate-800">
+                        {selectedRide.pickupLocation?.address || selectedRide.from?.name || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Dropoff Location</p>
+                      <p className="font-medium text-slate-800">
+                        {selectedRide.dropoffLocation?.address || selectedRide.to?.name || "N/A"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Ride Details */}
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Fare
-                  </p>
-                  <p className="text-lg font-semibold">
+                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs text-slate-500 mb-1">Fare Amount</p>
+                  <p className="text-2xl font-bold text-emerald-600">
                     ${selectedRide.fare || selectedRide.price}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Status
-                  </p>
-                  <p className="text-lg font-semibold capitalize">
+                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs text-slate-500 mb-1">Status</p>
+                  <p className="text-lg font-semibold text-slate-800 capitalize">
                     {selectedRide.status?.replace(/_/g, ' ')}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Date
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {new Date(
-                      selectedRide.createdAt
-                    ).toLocaleDateString()}
+                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs text-slate-500 mb-1">Date</p>
+                  <p className="text-lg font-semibold text-slate-800">
+                    {new Date(selectedRide.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
 
               {/* Status Update Section */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Manage Ride</h3>
+              <div className="space-y-4 border-t border-slate-200 pt-6">
+                <h3 className="font-semibold text-slate-800 text-lg">Manage Ride</h3>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-slate-700">
                       Update Status
                     </label>
                     <Select
                       value={selectedStatus}
                       onValueChange={setSelectedStatus}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="rounded-xl border-slate-200">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -677,7 +682,7 @@ export default function RideManagement() {
                     <Button
                       onClick={handleStatusUpdate}
                       disabled={statusUpdating || selectedStatus?.toLowerCase() === selectedRide.status?.toLowerCase()}
-                      className="w-full"
+                      className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
                       size="sm"
                     >
                       {statusUpdating ? (
@@ -691,8 +696,8 @@ export default function RideManagement() {
                     </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-slate-700">
                       Assign Driver
                     </label>
                     <Select
@@ -700,7 +705,7 @@ export default function RideManagement() {
                       onValueChange={setSelectedDriver}
                       disabled={driversLoading || !drivers.length}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="rounded-xl border-slate-200">
                         <SelectValue placeholder={
                           driversLoading 
                             ? "Loading drivers..." 
@@ -729,7 +734,7 @@ export default function RideManagement() {
                             );
                           })
                         ) : (
-                          <div className="p-2 text-sm text-muted-foreground">
+                          <div className="p-2 text-sm text-slate-500">
                             No drivers found
                           </div>
                         )}
@@ -738,7 +743,7 @@ export default function RideManagement() {
                     <Button
                       onClick={handleDriverAssignment}
                       disabled={driverAssigning || !selectedDriver || driversLoading}
-                      className="w-full"
+                      className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
                       size="sm"
                     >
                       {driverAssigning ? (

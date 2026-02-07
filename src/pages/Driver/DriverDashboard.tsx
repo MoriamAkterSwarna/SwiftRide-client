@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { useGetRidesQuery, useCancelRideMutation } from "@/redux/features/ride/ride.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,9 @@ import { MapPin, Clock, DollarSign, Loader2, XCircle, Car } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriverDashboard() {
+  const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [selectedRide, setSelectedRide] = useState<any>(null);
-  const { data: ridesData, isLoading, refetch } = useGetRidesQuery({});
+  const { data: ridesData, isLoading, refetch } = useGetRidesQuery({}, { skip: !hasSessionHint });
   const [cancelRide, { isLoading: cancelLoading }] = useCancelRideMutation();
 
   const rides = ridesData?.data || [];

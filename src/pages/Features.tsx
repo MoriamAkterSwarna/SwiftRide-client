@@ -1,6 +1,12 @@
 import { Zap, Shield, MapPin, Heart, Users, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
 
 export default function Features() {
+
+  
+  
+  
+  
+  
   const riderFeatures = [
     {
       icon: Zap,

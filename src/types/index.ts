@@ -58,6 +58,7 @@ export interface ISidebarItem {
     url: string;
     component?: ComponentType;
     isExternal?: boolean;
+    icon?: any;
   }[];
 }
 

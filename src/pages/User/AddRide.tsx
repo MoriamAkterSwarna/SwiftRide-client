@@ -40,7 +40,12 @@ export default function RequestRide() {
   const { data: divisionsData } = useGetDivisionsQuery();
   const { data: districtsData } = useGetDistrictsQuery();
   const { data: rideTypesData } = useGetRideTypesQuery();
-  const { data: userData } = useUserInfoQuery(undefined);
+  const hasSessionHint = useAppSelector(
+    (state) => state.authSession.hasSession,
+  );
+  const { data: userData } = useUserInfoQuery(undefined, {
+    skip: !hasSessionHint,
+  });
   const dispatch = useAppDispatch();
   const { pickup, dropoff, activeTarget } = useAppSelector((state) => state.location);
 

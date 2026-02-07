@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router";
 import { z } from "zod";
 import { useLoginMutation } from "@/redux/features/auth/auth.api";
+import { setSession } from "@/redux/features/auth/authSessionSlice";
+import { useAppDispatch } from "@/redux/hook";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -41,6 +43,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
   const [login, { isLoading }] = useLoginMutation();
+  const dispatch = useAppDispatch();
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -61,6 +64,8 @@ export function LoginForm({
 
       if (result.data.user?.isVerified) {
         toast.success("Login successful!");
+        localStorage.setItem("sr_has_session", "1");
+        dispatch(setSession());
         
         // Redirect based on user role
         const userRole = result.data.user?.role?.toUpperCase();
