@@ -1,20 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
-import { useGetUserActiveRideRequestsQuery, useCancelRideMutation } from "@/redux/features/ride/ride.api";
+import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
-  MapPin,
-  Clock,
-  DollarSign,
-  User,
-  X,
-  CheckCircle,
-  Car,
-  Phone,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Clock, User, Phone, Car, CheckCircle, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+
 
 interface RideRequest {
   _id: string;
@@ -49,12 +42,12 @@ interface RideRequest {
 }
 
 const statusColors = {
-  REQUESTED: "bg-yellow-100 text-yellow-800",
-  ACCEPTED: "bg-blue-100 text-blue-800",
-  PICKED_UP: "bg-purple-100 text-purple-800",
-  IN_TRANSIT: "bg-indigo-100 text-indigo-800",
-  COMPLETED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  REQUESTED: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400",
+  ACCEPTED: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400",
+  PICKED_UP: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400",
+  IN_TRANSIT: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400",
+  COMPLETED: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400",
+  CANCELLED: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400",
 };
 
 const statusIcons = {
@@ -68,201 +61,127 @@ const statusIcons = {
 
 export default function MultipleRideRequests() {
   const [selectedRide, setSelectedRide] = useState<string | null>(null);
-  
-  const { data: activeRides, isLoading, refetch } = useGetUserActiveRideRequestsQuery({});
-  const [cancelRide, { isLoading: isCancelling }] = useCancelRideMutation();
+  const { data, isLoading, error } = useGetMyRideRequestsQuery();
 
-  const handleCancelRide = async (rideId: string) => {
-    try {
-      await cancelRide({ 
-        id: rideId, 
-        reason: "Cancelled by user" 
-      }).unwrap();
-      toast.success("Ride cancelled successfully");
-      refetch();
-    } catch (error: any) {
-      const errorMessage = error?.data?.message || "Failed to cancel ride";
-      toast.error(errorMessage);
-    }
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
-
-  const getVehicleIcon = (vehicleType: string) => {
-    switch (vehicleType.toLowerCase()) {
-      case "car":
-        return <Car className="w-5 h-5" />;
-      case "bike":
-        return <Car className="w-5 h-5" />;
-      default:
-        return <Car className="w-5 h-5" />;
-    }
-  };
+  const rideRequests: RideRequest[] = data?.data || [];
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="w-full max-w-6xl mx-auto space-y-6 p-4 bg-white dark:bg-gray-950 min-h-screen">
+        <Skeleton className="h-8 w-64 bg-gray-200 dark:bg-gray-800" />
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-48 w-full bg-gray-200 dark:bg-gray-800" />
+        ))}
       </div>
     );
   }
 
-  const rides = activeRides?.data || [];
-
-  if (rides.length === 0) {
+  if (error) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-8 text-center">
-          <div className="text-gray-500">
-            <Car className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">No Active Ride Requests</h3>
-            <p>You don't have any active ride requests at the moment.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-6xl mx-auto p-4 bg-white dark:bg-gray-950 min-h-screen">
+        <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <p className="text-red-600 dark:text-red-400 text-center">Failed to load ride requests</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (rideRequests.length === 0) {
+    return (
+      <div className="w-full max-w-6xl mx-auto p-4 bg-white dark:bg-gray-950 min-h-screen">
+        <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-12 text-center">
+            <Car className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">No Active Rides</h3>
+            <p className="text-gray-600 dark:text-gray-400">You don't have any ride requests yet.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6 p-4 bg-white dark:bg-gray-950 min-h-screen">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Active Ride Requests</h2>
-        <Badge variant="outline" className="text-lg px-3 py-1">
-          {rides.length} Active
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Active Ride Requests</h2>
+        <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+          {rideRequests.length} {rideRequests.length === 1 ? "Ride" : "Rides"}
         </Badge>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {rides.map((ride: RideRequest) => (
+        {rideRequests.map((ride) => (
           <Card 
             key={ride._id} 
-            className={`relative transition-all duration-200 hover:shadow-lg ${
-              selectedRide === ride._id ? 'ring-2 ring-blue-500' : ''
+            className={`cursor-pointer transition-all hover:shadow-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 ${
+              selectedRide === ride._id ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""
             }`}
+            onClick={() => setSelectedRide(ride._id)}
           >
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2">
-                  {getVehicleIcon(ride.vehicleType)}
-                  <CardTitle className="text-lg">
-                    {ride.vehicleType} Ride
-                  </CardTitle>
-                </div>
-                <Badge className={`${statusColors[ride.status as keyof typeof statusColors]} flex items-center gap-1`}>
+              <div className="flex justify-between items-start mb-2">
+                <CardTitle className="text-lg text-gray-900 dark:text-white">
+                  {ride.vehicleType}
+                </CardTitle>
+                <Badge className={statusColors[ride.status as keyof typeof statusColors]}>
                   {statusIcons[ride.status as keyof typeof statusIcons]}
-                  {ride.status}
+                  <span className="ml-1">{ride.status}</span>
                 </Badge>
               </div>
-              <p className="text-sm text-gray-500">
-                {formatTime(ride.createdAt)}
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                <Clock className="inline w-4 h-4 mr-1" />
+                {new Date(ride.createdAt).toLocaleString()}
               </p>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Pickup Location */}
-              <div className="flex items-start gap-3">
-                <div className="bg-green-100 p-2 rounded-full">
-                  <MapPin className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Pickup</p>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {ride.pickupLocation.address}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center mb-1">
+                  <MapPin className="w-4 h-4 mr-1 text-green-600 dark:text-green-400" />
+                  Pickup
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 pl-5">
+                  {ride.pickupLocation.address}
+                </p>
               </div>
 
-              {/* Dropoff Location */}
-              <div className="flex items-start gap-3">
-                <div className="bg-red-100 p-2 rounded-full">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Dropoff</p>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {ride.dropoffLocation.address}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center mb-1">
+                  <MapPin className="w-4 h-4 mr-1 text-red-600 dark:text-red-400" />
+                  Dropoff
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 pl-5">
+                  {ride.dropoffLocation.address}
+                </p>
               </div>
 
-              {/* Fare */}
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <DollarSign className="w-4 h-4 text-blue-600" />
-                </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Fare</p>
-                  <p className="text-lg font-bold text-blue-600">
-                    ${ride.fare?.toFixed(2) || '0.00'}
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Fare</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">৳{ride.fare}</p>
                 </div>
-              </div>
-
-              {/* Driver Info (if assigned) */}
-              {ride.driver && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="w-4 h-4 text-gray-600" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Driver</p>
-                    <p className="text-sm text-gray-600">{ride.driver.name}</p>
-                    {ride.driver.phone && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Phone className="w-3 h-3 text-gray-500" />
-                        <p className="text-xs text-gray-500">{ride.driver.phone}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
-                {ride.status === 'REQUESTED' && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleCancelRide(ride._id)}
-                    disabled={isCancelling}
-                    className="flex-1"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Cancel
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedRide(
-                    selectedRide === ride._id ? null : ride._id
-                  )}
-                  className="flex-1"
-                >
-                  {selectedRide === ride._id ? 'Hide' : 'Details'}
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                  View Details
                 </Button>
               </div>
 
-              {/* Expanded Details */}
-              {selectedRide === ride._id && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg space-y-2">
-                  <h4 className="font-medium text-gray-900">Ride Details</h4>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><strong>Ride ID:</strong> {ride._id}</p>
-                    {ride.pickupLocation.coordinates && (
-                      <p>
-                        <strong>Pickup Coordinates:</strong> {ride.pickupLocation.coordinates.latitude}, {ride.pickupLocation.coordinates.longitude}
-                      </p>
+              {ride.driver && (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                    {ride.driver.picture ? (
+                      <img src={ride.driver.picture} alt={ride.driver.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     )}
-                    {ride.dropoffLocation.coordinates && (
-                      <p>
-                        <strong>Dropoff Coordinates:</strong> {ride.dropoffLocation.coordinates.latitude}, {ride.dropoffLocation.coordinates.longitude}
-                      </p>
-                    )}
-                    {ride.rider && (
-                      <p><strong>Rider:</strong> {ride.rider.name}</p>
-                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{ride.driver.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <Phone className="inline w-3 h-3 mr-1" />
+                      {ride.driver.phone}
+                    </p>
                   </div>
                 </div>
               )}

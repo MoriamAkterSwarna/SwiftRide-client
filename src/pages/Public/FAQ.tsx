@@ -1,427 +1,364 @@
-import { useState, useMemo } from 'react';
-import {
-  Search,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  User,
-  Car,
-  Shield,
-  CreditCard,
-  MapPin,
-  Clock,
-  AlertCircle,
-  Phone,
-  Mail,
-  MessageSquare,
-  Smartphone,
-  TrendingUp
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { ChevronDown, HelpCircle, MessageCircle, AlertCircle, BookOpen} from 'lucide-react';
+import { motion } from 'motion/react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
+
+interface FAQItem {
+  category: string;
+  questions: {
+    question: string;
+    answer: string;
+  }[];
+}
 
 export default function FAQ() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const { theme } = useTheme();
+  const [expandedIndex, setExpandedIndex] = useState<string | null>(null);
 
-  const faqData = [
+  const faqData: FAQItem[] = [
     {
-      id: '1',
-      category: 'getting-started',
-      question: 'How do I create a SwiftRide account?',
-      answer: 'Creating an account is easy! Download the SwiftRide app from your app store, click "Sign Up", enter your name, email, phone number, and create a password. You\'ll receive a verification code to confirm your number, and then you\'re ready to ride!',
-      icon: User
+      category: 'Getting Started',
+      questions: [
+        {
+          question: 'How do I download and setup SwiftRide?',
+          answer: 'Download the SwiftRide app from the App Store or Google Play. Create an account with your email, phone number, and payment method. Complete identity verification and you\'re ready to book your first ride!'
+        },
+        {
+          question: 'What are the minimum requirements to use SwiftRide?',
+          answer: 'You must be at least 18 years old with a valid email address and phone number. For payment, you\'ll need a credit/debit card or registered digital wallet.'
+        },
+        {
+          question: 'Can I use SwiftRide without a smartphone?',
+          answer: 'While our mobile app is the primary way to book rides, you can call our customer support team to book remotely. However, we recommend using the app for the best experience.'
+        }
+      ]
     },
     {
-      id: '2',
-      category: 'getting-started',
-      question: 'What information do I need to sign up?',
-      answer: 'You\'ll need to provide your full name, email address, phone number, and create a secure password. We may also require age verification to ensure you meet our minimum age requirements (18+ for riders, 21+ for drivers).',
-      icon: User
+      category: 'Booking & Rides',
+      questions: [
+        {
+          question: 'How long does it typically take to get a ride?',
+          answer: 'Average wait time is 3-5 minutes during normal hours. Peak hours may take 7-10 minutes. You\'ll receive real-time updates on driver location and estimated arrival.'
+        },
+        {
+          question: 'Can I schedule a ride in advance?',
+          answer: 'Yes! Use the "Schedule Ride" feature in the app to book a ride up to 30 days in advance. You can schedule rides for specific times that work best for you.'
+        },
+        {
+          question: 'What if I need to cancel my ride?',
+          answer: 'You can cancel for free if the driver hasn\'t started moving. After the driver picks up, cancellation fees may apply based on your location\'s pricing.'
+        },
+        {
+          question: 'Can I share a ride with someone else?',
+          answer: 'Yes! Our Pool rides feature allows you to share your ride with other passengers going in the same direction, saving up to 50% on fares.'
+        }
+      ]
     },
     {
-      id: '3',
-      category: 'getting-started',
-      question: 'Can I use SwiftRide without the app?',
-      answer: 'While the mobile app provides the best experience with GPS tracking and real-time updates, you can also book rides through our website. However, some features like live tracking and driver communication are optimized for the mobile app.',
-      icon: Smartphone
+      category: 'Payment & Pricing',
+      questions: [
+        {
+          question: 'How are fares calculated?',
+          answer: 'Fares are based on distance traveled, time taken, ride type selected, and current demand. You\'ll always see the estimated fare before confirming your booking.'
+        },
+        {
+          question: 'What payment methods do you accept?',
+          answer: 'We accept credit/debit cards, digital wallets (Apple Pay, Google Pay), cash payments, and corporate accounts. You can add multiple payment methods to your profile.'
+        },
+        {
+          question: 'Are there any hidden charges?',
+          answer: 'No! We believe in transparent pricing. The quoted price is the final price you pay. Any applicable taxes or tolls are included in the estimate.'
+        },
+        {
+          question: 'Do you offer discounts or promo codes?',
+          answer: 'Yes! New users get $5 off their first ride. We regularly offer promo codes for loyal customers. Check the app\'s Promotions section for current offers.'
+        }
+      ]
     },
     {
-      id: '4',
-      category: 'booking',
-      question: 'How do I book a ride?',
-      answer: 'Enter your pickup location and destination in the app, select your preferred ride type (Economy, Comfort, XL, or Luxury), review the estimated fare and ETA, then confirm your booking. You\'ll be matched with a nearby driver and can track their arrival in real-time.',
-      icon: MapPin
+      category: 'Safety & Support',
+      questions: [
+        {
+          question: 'How does SwiftRide ensure my safety?',
+          answer: 'All drivers undergo thorough background checks and vehicle inspections. We have 24/7 support, in-app SOS button, GPS tracking, and automated safety features to protect you.'
+        },
+        {
+          question: 'What should I do if I feel unsafe during a ride?',
+          answer: 'Press the SOS button in your active ride immediately. This alerts our safety team and local authorities. You can also exit the ride and contact us at 1-800-SOS-RIDE.'
+        },
+        {
+          question: 'Can I share my ride details with someone?',
+          answer: 'Yes! Use the "Share Your Trip" feature to send real-time ride details to friends or family. They can track your location and arrival time.'
+        },
+        {
+          question: 'What if I left something in the car?',
+          answer: 'Contact our support team immediately with your trip details. We\'ll help you connect with the driver to retrieve your lost item. Most items are recovered within 24 hours.'
+        }
+      ]
     },
     {
-      id: '5',
-      category: 'booking',
-      question: 'Can I schedule a ride in advance?',
-      answer: 'Yes! You can schedule rides up to 30 days in advance. Select "Schedule" instead of "Ride Now", choose your date and time, and we\'ll send you a confirmation when your driver is on the way.',
-      icon: Clock
+      category: 'Driver Questions',
+      questions: [
+        {
+          question: 'How can I become a SwiftRide driver?',
+          answer: 'Visit our "Become a Driver" page or download the driver app. You\'ll need to be 21+, have a valid license, pass a background check, and own a qualifying vehicle.'
+        },
+        {
+          question: 'What are the vehicle requirements?',
+          answer: 'Your vehicle should be a 2010 model or newer, have valid registration and insurance, pass a safety inspection, and seat at least 4 passengers.'
+        },
+        {
+          question: 'How much can I earn as a driver?',
+          answer: 'Earnings vary based on location, time, and demand. On average, drivers earn $15-25/hour. Peak hours and surge pricing can increase earnings significantly.'
+        },
+        {
+          question: 'What happens if there\'s an accident?',
+          answer: 'SwiftRide provides insurance coverage for accidents during active rides. Report the incident immediately in the app, and our support team will guide you through the claims process.'
+        }
+      ]
     },
     {
-      id: '6',
-      category: 'booking',
-      question: 'How do I cancel a ride?',
-      answer: 'You can cancel a ride before the driver arrives through the app. Go to your active ride, tap "Cancel Ride", and select a reason. Note that cancellation fees may apply if you cancel after the driver has accepted and is en route.',
-      icon: Car
-    },
-    {
-      id: '7',
-      category: 'booking',
-      question: 'What if no drivers are available?',
-      answer: 'If no drivers are available in your area, you\'ll see an option to "Try Again Later" or "Schedule for Later". We recommend trying again in a few minutes or scheduling your ride for when demand is typically lower.',
-      icon: AlertCircle
-    },
-    {
-      id: '8',
-      category: 'payment',
-      question: 'What payment methods are accepted?',
-      answer: 'We accept credit/debit cards (Visa, Mastercard, American Express), digital wallets (Apple Pay, Google Pay, PayPal), cash (in select cities), and SwiftRide gift cards. You can add multiple payment methods in the app settings.',
-      icon: CreditCard
-    },
-    {
-      id: '9',
-      category: 'payment',
-      question: 'How are fares calculated?',
-      answer: 'Fares are calculated based on base fare + (distance × rate) + (time × rate) + any applicable tolls or surge pricing. You\'ll always see the estimated fare before booking, and the final fare is charged after your trip completes.',
-      icon: CreditCard
-    },
-    {
-      id: '10',
-      category: 'payment',
-      question: 'Can I get a receipt for my ride?',
-      answer: 'Yes! Receipts are automatically sent to your email after each ride. You can also access all your ride receipts in the app under "Ride History" or on our website under your account settings.',
-      icon: CreditCard
-    },
-    {
-      id: '11',
-      category: 'payment',
-      question: 'What is surge pricing?',
-      answer: 'Surge pricing may apply during periods of high demand when there are more riders than available drivers. This helps encourage more drivers to get on the road. You\'ll always see the surge multiplier and final price before booking.',
-      icon: TrendingUp
-    },
-    {
-      id: '12',
-      category: 'safety',
-      question: 'Is SwiftRide safe to use?',
-      answer: 'Absolutely! Safety is our top priority. All drivers undergo comprehensive background checks, vehicle inspections, and safety training. Our app includes safety features like GPS tracking, trip recording, emergency SOS button, and 24/7 customer support.',
-      icon: Shield
-    },
-    {
-      id: '13',
-      category: 'safety',
-      question: 'What should I do if I feel unsafe during a ride?',
-      answer: 'If you ever feel unsafe, use the in-app SOS button to immediately connect with emergency services and our safety team. You can also share your trip status with trusted contacts, and our support team is available 24/7 at 1-800-SOS-RIDE.',
-      icon: Shield
-    },
-    {
-      id: '14',
-      category: 'safety',
-      question: 'How are drivers vetted?',
-      answer: 'All drivers must pass a multi-step screening process including criminal background checks, driving record reviews, vehicle inspections, and in-person orientation. We also continuously monitor driver performance and customer feedback.',
-      icon: Shield
-    },
-    {
-      id: '15',
-      category: 'safety',
-      question: 'What happens if I leave something in the car?',
-      answer: 'Contact our support team immediately with your trip details. We\'ll help you connect with the driver to arrange the return of your item. There may be a return fee depending on the distance and time required.',
-      icon: Car
-    },
-    {
-      id: '16',
-      category: 'driver',
-      question: 'How do I become a SwiftRide driver?',
-      answer: 'Visit our "Become a Driver" page or download the SwiftRide Driver app. You\'ll need to meet age requirements (21+), have a valid driver\'s license, vehicle insurance, pass a background check, and have a qualifying vehicle that meets our safety standards.',
-      icon: Car
-    },
-    {
-      id: '17',
-      category: 'driver',
-      question: 'What are the requirements to become a driver?',
-      answer: 'Requirements include: 21+ years old, valid driver\'s license, at least 1 year of driving experience, vehicle registration and insurance, passing background check, and a smartphone compatible with our driver app. Vehicle requirements vary by city but generally include 4-door vehicles in good condition.',
-      icon: Car
-    },
-    {
-      id: '18',
-      category: 'driver',
-      question: 'How and when do drivers get paid?',
-      answer: 'Drivers are paid weekly via direct deposit to their bank account. You can track your earnings in real-time through the driver app, including detailed breakdowns of fares, tips, bonuses, and deductions. Instant payout options may be available in some areas.',
-      icon: CreditCard
-    },
-    {
-      id: '19',
-      category: 'driver',
-      question: 'Can drivers choose their own hours?',
-      answer: 'Yes! One of the benefits of driving with SwiftRide is complete flexibility. You can drive whenever you want, for as long as you want. There are no minimum hours or schedules required.',
-      icon: Clock
-    },
-    {
-      id: '20',
-      category: 'technical',
-      question: 'Why isn\'t the app working properly?',
-      answer: 'First, try restarting the app and ensuring you have a stable internet connection. Make sure your app is updated to the latest version. If issues persist, check our status page for any ongoing outages or contact our technical support team.',
-      icon: AlertCircle
-    },
-    {
-      id: '21',
-      category: 'technical',
-      question: 'How do I report a technical issue?',
-      answer: 'You can report technical issues through the app\'s "Help" section, via email at techsupport@swiftride.com, or through our 24/7 live chat. Please include details about your device, app version, and steps to reproduce the issue.',
-      icon: MessageSquare
-    },
-    {
-      id: '22',
-      category: 'technical',
-      question: 'Is my location data secure?',
-      answer: 'Yes, we take data privacy very seriously. Your location data is encrypted and only used for ride matching, safety, and service improvement. We never sell your personal data to third parties, and you can review our privacy policy for more details.',
-      icon: Shield
+      category: 'Account & Profile',
+      questions: [
+        {
+          question: 'How do I update my profile information?',
+          answer: 'Go to Settings > Profile and update your name, email, phone number, or payment methods. Changes take effect immediately.'
+        },
+        {
+          question: 'Can I have multiple accounts?',
+          answer: 'No, you can only have one active account per email address. Having multiple accounts violates our terms of service.'
+        },
+        {
+          question: 'What if I forgot my password?',
+          answer: 'Click "Forgot Password" on the login screen. We\'ll send a reset link to your registered email. Follow the link to create a new password.'
+        },
+        {
+          question: 'How do I delete my account?',
+          answer: 'Go to Settings > Account > Delete Account. You\'ll need to confirm this action. Your data will be securely deleted within 30 days.'
+        }
+      ]
     }
   ];
 
-  const categories = [
-    { id: 'all', name: 'All Categories', icon: HelpCircle },
-    { id: 'getting-started', name: 'Getting Started', icon: User },
-    { id: 'booking', name: 'Booking Rides', icon: MapPin },
-    { id: 'payment', name: 'Payment & Pricing', icon: CreditCard },
-    { id: 'safety', name: 'Safety', icon: Shield },
-    { id: 'driver', name: 'Driver Information', icon: Car },
-    { id: 'technical', name: 'Technical Support', icon: AlertCircle }
-  ];
-
-  const filteredFAQs = useMemo(() => {
-    return faqData.filter(faq => {
-      const matchesSearch = faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        faq.answer.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchTerm, selectedCategory]);
-
-  const toggleExpanded = (id: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedItems(newExpanded);
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
   };
 
-  const expandAll = () => {
-    setExpandedItems(new Set(filteredFAQs.map(faq => faq.id)));
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6 },
+    },
   };
 
-  const collapseAll = () => {
-    setExpandedItems(new Set());
+  const toggleAccordion = (id: string) => {
+    setExpandedIndex(expandedIndex === id ? null : id);
   };
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'}`}>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-purple-700 text-white py-20">
+      <section className={`relative py-32 overflow-hidden ${theme === "dark" ? "bg-linear-to-br from-gray-950 via-blue-950 to-gray-950" : "bg-linear-to-br from-blue-50 via-white to-cyan-50"}`}>
+         {/* Background decoration */}
+        <div className="absolute inset-0">
+          <div className={`absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 ${theme === "dark" ? "bg-blue-600" : "bg-blue-500"} blur-3xl`}></div>
+          <div className={`absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-20 ${theme === "dark" ? "bg-cyan-600" : "bg-cyan-500"} blur-3xl`}></div>
+        </div>
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <HelpCircle className="h-16 w-16 mx-auto mb-6" />
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-4xl mx-auto text-center"
+          >
+            <motion.div variants={itemVariants} className="mb-6">
+              <HelpCircle className="h-16 w-16 mx-auto" />
+            </motion.div>
+            <motion.h1 variants={itemVariants} className="text-5xl md:text-6xl font-bold mb-6">
               Frequently Asked Questions
-            </h1>
-            <p className="text-xl lg:text-2xl text-blue-100 mb-8">
+            </motion.h1>
+            <motion.p variants={itemVariants} className={`text-xl md:text-2xl max-w-2xl mx-auto ${
+    theme === 'dark' ? 'text-blue-50' : 'text-gray-700'
+  }`}>
               Find answers to common questions about SwiftRide
-            </p>
-            <div className="max-w-2xl mx-auto">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search for answers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder-blue-200"
-                />
-              </div>
-            </div>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 
-      {/* Category Filter */}
-      <section className="py-8 bg-gray-50 border-b">
+      {/* FAQ Categories */}
+      <section className={`py-24 ${theme === 'dark' ? 'bg-gray-950' : 'bg-white'}`}>
         <div className="container mx-auto px-4">
-          <div className="flex flex-wrap gap-3 justify-center">
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory(category.id)}
-                className="flex items-center gap-2"
-              >
-                <category.icon className="h-4 w-4" />
-                {category.name}
-              </Button>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto space-y-12"
+          >
+            {faqData.map((category, categoryIdx) => (
+              <motion.div key={categoryIdx} variants={itemVariants}>
+                <div className="mb-8">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-8">
+                    {category.category}
+                  </h2>
+
+                  <div className="space-y-4">
+                    {category.questions.map((item, itemIdx) => {
+                      const itemId = `${categoryIdx}-${itemIdx}`;
+                      const isExpanded = expandedIndex === itemId;
+
+                      return (
+                        <motion.div
+                          key={itemIdx}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: itemIdx * 0.1 }}
+                        >
+                          <Card
+                            className={`border-0 cursor-pointer transition-all duration-300 overflow-hidden ${
+                              theme === 'dark'
+                                ? 'bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20'
+                                : 'bg-gray-50 hover:shadow-lg'
+                            }`}
+                            onClick={() => toggleAccordion(itemId)}
+                          >
+                            <CardContent className="p-6">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-semibold mb-2">{item.question}</h3>
+                                </div>
+                                <motion.div
+                                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="shrink-0 mt-1"
+                                >
+                                  <ChevronDown className="h-5 w-5 text-blue-500" />
+                                </motion.div>
+                              </div>
+
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  height: isExpanded ? 'auto' : 0,
+                                  opacity: isExpanded ? 1 : 0,
+                                  marginTop: isExpanded ? 16 : 0,
+                                }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                              >
+                                <div className={`pt-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                                    {item.answer}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
             ))}
-          </div>
-          {filteredFAQs.length > 0 && (
-            <div className="flex justify-center gap-4 mt-6">
-              <Button variant="ghost" size="sm" onClick={expandAll}>
-                Expand All
-              </Button>
-              <Button variant="ghost" size="sm" onClick={collapseAll}>
-                Collapse All
-              </Button>
-            </div>
-          )}
+          </motion.div>
         </div>
       </section>
 
-      {/* FAQ Content */}
-      <section className="py-16">
+      {/* Still Have Questions */}
+      <section className={`py-24 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {filteredFAQs.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No results found</h3>
-                <p className="text-gray-600">
-                  Try adjusting your search terms or browse a different category.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredFAQs.map((faq) => (
-                  <Card key={faq.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-0">
-                      <button
-                        onClick={() => toggleExpanded(faq.id)}
-                        className="w-full text-left p-6 focus:outline-none focus:bg-gray-50"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                              <faq.icon className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold mb-2">{faq.question}</h3>
-                              {expandedItems.has(faq.id) && (
-                                <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0">
-                            {expandedItems.has(faq.id) ? (
-                              <ChevronUp className="h-5 w-5 text-gray-400" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5 text-gray-400" />
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <motion.div variants={itemVariants} className="mb-6">
+              <MessageCircle className={`h-16 w-16 mx-auto ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-500'}`} />
+            </motion.div>
+            <motion.h2 variants={itemVariants} className="text-4xl md:text-5xl font-bold mb-6">
+              Still Have <span className="bg-linear-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Questions?</span>
+            </motion.h2>
+            <motion.p variants={itemVariants} className={`text-xl ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-10 max-w-2xl mx-auto`}>
+              Our support team is ready to help. Reach out to us through any of the following methods.
+            </motion.p>
 
-      {/* Quick Stats */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-12">Did You Know?</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">24/7</div>
-                <p className="text-gray-600">Customer Support Available</p>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">&lt;2 min</div>
-                <p className="text-gray-600">Average Response Time</p>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">98%</div>
-                <p className="text-gray-600">Customer Satisfaction Rate</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Still Need Help */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
-              <CardContent className="p-12 text-center">
-                <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6" />
-                <h2 className="text-3xl font-bold mb-4">Still Need Help?</h2>
-                <p className="text-lg text-gray-600 mb-8">
-                  Can't find what you're looking for? Our support team is here to help!
-                </p>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <Phone className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-2">Call Us</h3>
-                    <p className="text-gray-600 mb-3">1-800-RIDENOW</p>
-                    <p className="text-sm text-gray-500">24/7 Support</p>
+            <motion.div
+              variants={itemVariants}
+              className="grid md:grid-cols-3 gap-6 mt-12"
+            >
+              <Card className={`border-0 h-full transition-all duration-300 hover:shadow-lg ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white shadow-lg'
+              }`}>
+                <CardContent className="p-8 text-center">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-100'
+                  }`}>
+                    <MessageCircle className="h-6 w-6 text-blue-500" />
                   </div>
-                  <div className="text-center">
-                    <Mail className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-2">Email Us</h3>
-                    <p className="text-gray-600 mb-3">support@swiftride.com</p>
-                    <p className="text-sm text-gray-500">Response within 24hrs</p>
-                  </div>
-                  <div className="text-center">
-                    <MessageSquare className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-2">Live Chat</h3>
-                    <p className="text-gray-600 mb-3">Available in app</p>
-                    <p className="text-sm text-gray-500">9 AM - 9 PM Daily</p>
-                  </div>
-                </div>
-                <div className="mt-8">
-                  <Button size="lg" className="bg-primary hover:bg-primary/600">
-                    Contact Support Team
+                  <h3 className="text-xl font-semibold mb-2">Live Chat</h3>
+                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} >
+                    Chat with our support team in real-time
+                  </p>
+                  <Button className="mt-4 w-full bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+                    Start Chat
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+                </CardContent>
+              </Card>
 
-      {/* Popular Topics */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-8 text-center">Popular Topics</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {[
-                'How to cancel a ride',
-                'Payment methods',
-                'Safety features',
-                'Lost items',
-                'Driver requirements',
-                'Fare calculation',
-                'Schedule a ride',
-                'Account issues'
-              ].map((topic, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="justify-start h-auto p-4"
-                  onClick={() => setSearchTerm(topic)}
-                >
-                  <Search className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <span className="text-left">{topic}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
+              <Card className={`border-0 h-full transition-all duration-300 hover:shadow-lg ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white shadow-lg'
+              }`}>
+                <CardContent className="p-8 text-center">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    theme === 'dark' ? 'bg-green-500/20' : 'bg-green-100'
+                  }`}>
+                    <AlertCircle className="h-6 w-6 text-green-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Call Us</h3>
+                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                    24/7 customer support available
+                  </p>
+                  <Button className="mt-4 w-full bg-green-500 hover:bg-green-600">
+                    1-800-RIDENOW
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className={`border-0 h-full transition-all duration-300 hover:shadow-lg ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white shadow-lg'
+              }`}>
+                <CardContent className="p-8 text-center">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    theme === 'dark' ? 'bg-purple-500/20' : 'bg-purple-100'
+                  }`}>
+                    <BookOpen className="h-6 w-6 text-purple-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Email Us</h3>
+                  <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                    support@swiftride.com
+                  </p>
+                  <Button className="mt-4 w-full bg-purple-500 hover:bg-purple-600">
+                    Send Email
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </div>

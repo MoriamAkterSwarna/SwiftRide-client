@@ -1,310 +1,214 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import * as React from "react";
-import { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import Logo from "@/assets/icons/Logo";
-import { ModeToggle } from "./ModeToggle";
-import { Link, useNavigate } from "react-router";
-import {
-  authApi,
-  useLogoutMutation,
-  useUserInfoQuery,
-} from "@/redux/features/auth/auth.api";
-import { clearSession } from "@/redux/features/auth/authSessionSlice";
-import { useAppDispatch, useAppSelector } from "@/redux/hook";
-import { toast } from "sonner";
-import { role } from "@/constants/role";
-import type { TRole } from "@/types";
-import { baseApi } from "@/redux/baseApi";
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router';
+import { Menu, X, Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
+import { motion, AnimatePresence } from 'motion/react';
 
-// Hamburger icon component
-const HamburgerIcon = ({
-  className,
-  ...props
-}: React.SVGAttributes<SVGElement>) => (
-  <svg
-    className={cn("pointer-events-none", className)}
-    width={16}
-    height={16}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    xmlns="http://www.w3.org/2000/svg"
-    {...(props as any)}
-  >
-    <path
-      d="M4 12L20 12"
-      className="origin-center -translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-315"
-    />
-    <path
-      d="M4 12H20"
-      className="origin-center transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.8)] group-aria-expanded:rotate-45"
-    />
-    <path
-      d="M4 12H20"
-      className="origin-center translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-135"
-    />
-  </svg>
-);
-// Types
-export interface NavbarNavItem {
-  href?: string;
-  label: string;
-  active?: boolean;
-  role?: TRole;
-}
-export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
-  logo?: React.ReactNode;
-  logoHref?: string;
-  navigationLinks?: NavbarNavItem[];
-  signInText?: string;
-  signInHref?: string;
-  signOutText?: string;
-  signOutHref?: string;
-  ctaText?: string;
-  ctaHref?: string;
-  onSignInClick?: () => void;
-  onCtaClick?: () => void;
-}
-// Default navigation links
-const defaultNavigationLinks: NavbarNavItem[] = [
-  { href: "/", label: "Home", role: "PUBLIC" },
-  { href: "/features", label: "Features", role: "PUBLIC" },
-  { href: "/about", label: "About", role: "PUBLIC" },
-  { href: "/contact", label: "Contact", role: "PUBLIC" },
-  { href: "/faq", label: "FAQ", role: "PUBLIC" },
-  { href: "/admin", label: "Dashboard", role: role.admin },
-  { href: "/admin", label: "Dashboard", role: role.superAdmin },
-  { href: "/user", label: "Dashboard", role: role.user },
-  { href: "/rider", label: "Dashboard", role: role.rider },
-];
-export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
-  (
-    {
-      className,
-      logo = <Logo />,
-      logoHref = "#",
-      navigationLinks = defaultNavigationLinks,
-      signInText = "Sign In",
-      signInHref = "/login",
-      signOutText = "Sign Out",
-      onSignInClick,
-      ...props
-    },
-    ref,
-  ) => {
-    const hasSessionHint = useAppSelector(
-      (state) => state.authSession.hasSession,
-    );
-    const { data } = useUserInfoQuery(undefined, {
-      skip: !hasSessionHint,
-    });
-    const [logout] = useLogoutMutation();
-    const navigate = useNavigate();
-    console.log(data?.data?.data.email);
-    const [isMobile, setIsMobile] = useState(false);
-    const containerRef = useRef<HTMLElement>(null);
+export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
-    const dispatch = useAppDispatch();
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
-    console.log(data?.data?.data?.role);
-
-    useEffect(() => {
-      const checkWidth = () => {
-        if (containerRef.current) {
-          const width = containerRef.current.offsetWidth;
-          setIsMobile(width < 768); // 768px is md breakpoint
-        }
-      };
-      checkWidth();
-      const resizeObserver = new ResizeObserver(checkWidth);
-      if (containerRef.current) {
-        resizeObserver.observe(containerRef.current);
-      }
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }, []);
-    // Combine refs
-    const combinedRef = React.useCallback(
-      (node: HTMLElement | null) => {
-        containerRef.current = node;
-        if (typeof ref === "function") {
-          ref(node);
-        } else if (ref) {
-          ref.current = node;
-        }
-      },
-      [ref],
-    );
-
-    const handleLogout = async () => {
-      try {
-        await logout(undefined).unwrap();
-        localStorage.removeItem("sr_has_session");
-        dispatch(clearSession());
-        dispatch(authApi.util.resetApiState());
-          dispatch(baseApi.util.resetApiState());
-        navigate("/");
-        toast.success("Logged out successfully!");
-      } catch (error: any) {
-        toast.error(error?.data?.message || "Logout failed");
-        navigate("/");
-      }
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
     };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    return (
-      <header
-        ref={combinedRef}
-        className={cn(
-          "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 md:px-6 *:no-underline",
-          className,
-        )}
-        {...(props as any)}
-      >
-        <div className="container px-4 py-16 mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4">
-          {/* Left side */}
-          <div className="flex items-center gap-2">
-            {/* Mobile menu trigger */}
-            {isMobile && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    className="group h-9 w-9 hover:bg-accent hover:text-accent-foreground"
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <HamburgerIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-64 p-1">
-                  <NavigationMenu className="max-w-none">
-                    <NavigationMenuList className="flex-col items-start gap-0">
-                      {navigationLinks.map((link, index) => (
-                        <React.Fragment key={index}>
-                          {link.role === "PUBLIC" && (
-                            <NavigationMenuItem asChild className="w-full">
-                              <Link
-                                to={link.href ?? "/"}
-                                className={cn(
-                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
-                                  link.active &&
-                                    "bg-accent text-accent-foreground",
-                                )}
-                              >
-                                {link.label}
-                              </Link>
-                            </NavigationMenuItem>
-                          )}
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Features', path: '/features' },
+    { name: 'About', path: '/about' },
+    { name: 'Contact', path: '/contact' },
+  ];
 
-                          {hasSessionHint && link.role === data?.data?.data?.role && (
-                            <NavigationMenuItem asChild className="w-full">
-                              <Link
-                                to={link.href ?? "/"}
-                                className={cn(
-                                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer no-underline",
-                                  link.active &&
-                                    "bg-accent text-accent-foreground",
-                                )}
-                              >
-                                {link.label}
-                              </Link>
-                            </NavigationMenuItem>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </NavigationMenuList>
-                  </NavigationMenu>
-                </PopoverContent>
-              </Popover>
-            )}
-            {/* Main nav */}
-            <div className="flex items-center gap-6">
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center space-x-2 text-primary hover:text-primary/90 transition-colors cursor-pointer"
-              >
-                <div className="text-2xl">{logo}</div>
-              </button>
-              {/* Navigation menu */}
-              {!isMobile && (
-                <NavigationMenu className="flex">
-                  <NavigationMenuList className="gap-1">
-                    {navigationLinks.map((link, index) => {
-                      const isVisible =
-                        link.role === "PUBLIC" 
-                        ||
-                        (hasSessionHint && link.role === data?.data?.data?.role);
-                      if (!isVisible) return null;
-                      return (
-                        <NavigationMenuItem key={index}>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to={link.href ?? "/"}
-                              className={cn(
-                                "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative",
-                                "before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100",
-                                link.active &&
-                                  "before:scale-x-100 text-primary",
-                              )}
-                              data-active={link.active}
-                            >
-                              {link.label}
-                            </Link>
-                          </NavigationMenuLink>
-                        </NavigationMenuItem>
-                      );
-                    })}
-                  </NavigationMenuList>
-                </NavigationMenu>
-              )}
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? theme === 'dark'
+            ? 'bg-gray-900/95 backdrop-blur-md shadow-lg'
+            : 'bg-white/95 backdrop-blur-md shadow-lg'
+          : theme === 'dark'
+          ? 'bg-transparent'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16 md:h-20">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 group">
+            <div className="relative">
+              <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-blue-500/50 transition-all">
+                <span className="text-white font-bold text-xl">S</span>
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
             </div>
+            <span className={`text-xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent hidden sm:block`}>
+              SwiftRide
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isActive(link.path)
+                    ? theme === 'dark'
+                      ? 'text-white'
+                      : 'text-gray-900'
+                    : theme === 'dark'
+                    ? 'text-gray-300 hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {link.name}
+                {isActive(link.path) && (
+                  <motion.div
+                    layoutId="navbar-indicator"
+                    className="absolute inset-0 bg-linear-to-r from-blue-500 to-cyan-500 rounded-lg -z-10"
+                    initial={false}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </Link>
+            ))}
           </div>
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            <ModeToggle />
 
-            {hasSessionHint && (
-              <Button
-                onClick={handleLogout}
-                size="sm"
-                variant="outline"
-                className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
-              >
-                {signOutText}
-              </Button>
-            )}
+          {/* Right side - Theme Toggle & Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className={`relative w-10 h-10 rounded-full ${
+                theme === 'dark'
+                  ? 'hover:bg-gray-800'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              <AnimatePresence mode="wait">
+                {theme === 'dark' ? (
+                  <motion.div
+                    key="moon"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Moon className="h-5 w-5 text-yellow-500" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="sun"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Sun className="h-5 w-5 text-orange-500" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
 
-            {!hasSessionHint && (
-              <Button
-                size="sm"
-                className="text-sm font-medium px-4 h-9 rounded-md shadow-sm"
-              >
-                <Link to={signInHref}>{signInText}</Link>
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              className={theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900'}
+            >
+              Sign In
+            </Button>
+            <Button className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transition-all">
+              Get Started
+            </Button>
+          </div>
+
+          {/* Mobile Menu Button & Theme Toggle */}
+          <div className="flex md:hidden items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className={`w-10 h-10 ${
+                theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+              }`}
+            >
+              {theme === 'dark' ? (
+                <Moon className="h-5 w-5 text-yellow-500" />
+              ) : (
+                <Sun className="h-5 w-5 text-orange-500" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(!isOpen)}
+              className={theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}
+            >
+              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
           </div>
         </div>
-      </header>
-    );
-  },
-);
-Navbar.displayName = "Navbar";
-export { HamburgerIcon };
-export default Navbar;
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`md:hidden overflow-hidden ${
+              theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+            } border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}
+          >
+            <div className="container mx-auto px-4 py-6 space-y-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-3 rounded-lg text-base font-medium transition-all ${
+                    isActive(link.path)
+                      ? 'bg-linear-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                      : theme === 'dark'
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <div className="pt-4 space-y-3 border-t border-gray-200 dark:border-gray-800">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                >
+                  Sign In
+                </Button>
+                <Button className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
+                  Get Started
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+}

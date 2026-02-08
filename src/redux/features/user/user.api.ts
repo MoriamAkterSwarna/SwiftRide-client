@@ -20,13 +20,13 @@ export const userApi = baseApi.injectEndpoints({
       invalidatesTags: ["USER"],
     }),
 
-    changePassword: builder.mutation({
-      query: (data) => ({
-        url: "/user/change-password",
-        method: "PATCH",
-        data,
-      }),
-    }),
+    // changePassword: builder.mutation({
+    //   query: (data) => ({
+    //     url: "/auth/change-password",
+    //     method: "PATCH",
+    //     data,
+    //   }),
+    // }),
 
     // Driver specific profile 
 
@@ -209,7 +209,7 @@ export const userApi = baseApi.injectEndpoints({
 export const {
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
-  useChangePasswordMutation,
+  // useChangePasswordMutation,
   useUpdateDriverProfileMutation,
   useGetDriverProfileQuery,
   useApplyAsDriverMutation,

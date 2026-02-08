@@ -1,10 +1,15 @@
+
+
+
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { User, Phone, Lock, Mail, AlertCircle } from "lucide-react";
+import { User, Phone, Lock, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
-import { useGetUserProfileQuery, useChangePasswordMutation, useUpdateUserProfileMutation } from "@/redux/features/user/user.api";
+import { useGetUserProfileQuery, useUpdateUserProfileMutation } from "@/redux/features/user/user.api";
+import { useUpdatePasswordMutation } from "@/redux/features/auth/auth.api";
 
 interface RootState {
   authSession: {
@@ -22,11 +27,16 @@ export default function Profile() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [loading, setLoading] = useState(false);
 
   const { data: profileData } = useGetUserProfileQuery(undefined, { skip: !hasSessionHint });
   const [updateProfile] = useUpdateUserProfileMutation();
-  const [changePassword] = useChangePasswordMutation();
+  const [updatePassword] = useUpdatePasswordMutation();
 
   const user = profileData?.data?.data ?? profileData?.data ?? profileData;
   const joinedDate = user?.createdAt
@@ -56,6 +66,13 @@ export default function Profile() {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const togglePasswordVisibility = (field: "current" | "new" | "confirm") => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -72,7 +89,6 @@ export default function Profile() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Don't send email - it can't be updated
       const { email, ...dataToUpdateWithoutEmail } = formData;
       const result = await updateProfile(dataToUpdateWithoutEmail).unwrap();
       console.log("Profile update response:", result);
@@ -86,33 +102,39 @@ export default function Profile() {
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    setLoading(true);
-    try {
-      await changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      }).unwrap();
-      toast.success("Password changed successfully!");
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error) {
-      toast.error("Failed to change password");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handlePasswordSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Frontend validation
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    toast.error("New password and confirm password do not match");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // Send only oldPassword (currentPassword) and newPassword
+    await updatePassword({
+      oldPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    }).unwrap();
+    
+    toast.success("Password changed successfully!");
+    setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  } catch (error: any) {
+    const errorMessage = error?.data?.message || "Failed to change password";
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-6 pt-10 font-body">
       <div className="relative overflow-hidden rounded-[32px] border border-slate-200/70 bg-white/70 p-8 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,200,160,0.9),rgba(255,200,160,0.1)_55%,transparent_70%)]" />
         <div className="pointer-events-none absolute -left-20 top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(147,197,253,0.85),rgba(147,197,253,0.15)_55%,transparent_70%)]" />
-        <div className="pointer-events-none absolute bottom-[-120px] right-12 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(52,211,153,0.6),rgba(52,211,153,0.15)_55%,transparent_70%)]" />
+        <div className="pointer-events-none absolute -bottom-30 right-12 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(52,211,153,0.6),rgba(52,211,153,0.15)_55%,transparent_70%)]" />
 
         <div className="relative z-10">
           <div className="flex flex-col gap-8 lg:flex-row">
@@ -315,6 +337,7 @@ export default function Profile() {
                         value={formData.email}
                         onChange={handleProfileChange}
                         className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                        disabled
                       />
                     </div>
 
@@ -346,44 +369,84 @@ export default function Profile() {
                       </ul>
                     </div>
 
-                    <div className="grid gap-6 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                          Current Password
-                        </label>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                        Current Password
+                      </label>
+                      <div className="relative">
                         <input
-                          type="password"
+                          type={showPasswords.current ? "text" : "password"}
                           name="currentPassword"
                           value={passwordData.currentPassword}
                           onChange={handlePasswordChange}
-                          className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                          className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
                         />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("current")}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
                       </div>
+                    </div>
+
+                    <div className="grid gap-6 sm:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
                           New Password
                         </label>
-                        <input
-                          type="password"
-                          name="newPassword"
-                          value={passwordData.newPassword}
-                          onChange={handlePasswordChange}
-                          className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showPasswords.new ? "text" : "password"}
+                            name="newPassword"
+                            value={passwordData.newPassword}
+                            onChange={handlePasswordChange}
+                            className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility("new")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                          >
+                            {showPasswords.new ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordChange}
-                        className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
-                      />
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                          Confirm New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPasswords.confirm ? "text" : "password"}
+                            name="confirmPassword"
+                            value={passwordData.confirmPassword}
+                            onChange={handlePasswordChange}
+                            className="w-full rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility("confirm")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                          >
+                            {showPasswords.confirm ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     <button
@@ -416,5 +479,5 @@ export default function Profile() {
         </div>
       </div>
     </div>
-    );
+  );
 }

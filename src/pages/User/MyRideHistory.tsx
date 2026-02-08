@@ -1,285 +1,398 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from "react";
-import { useSelector } from "react-redux";
-import { MapPin, Calendar, DollarSign, Clock, Star, User } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useGetUserRideQuery } from "@/redux/features/ride/ride.api";
+import { DollarSign, Car, Search, Filter, ChevronDown, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function MyRideHistory() {
-    const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
-    const [page, setPage] = useState(1);
-    const [filters, setFilters] = useState({
-        status: "",
-        startDate: "",
-        endDate: "",
+
+interface RideLocation {
+  address: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+interface Ride {
+  _id?: string;
+  id?: string;
+  title: string;
+  description?: string;
+  pickUpLocation: RideLocation;
+  dropOffLocation: RideLocation;
+  pickUpTime: string;
+  dropOffTime: string;
+  cost: number;
+  availableSeats: number;
+  maxGuests?: number;
+  status: string;
+  vehicle?: string;
+  amenities?: string[];
+  rideType?: string;
+  images?: string[];
+  createdAt: string;
+  [key: string]: any; // Allow any extra properties
+}
+
+const statusConfig = {
+  ACTIVE: {
+    color: "bg-green-100 dark:bg-green-900/30",
+    textColor: "text-green-800 dark:text-green-400",
+    label: "Active",
+    icon: <CheckCircle className="w-4 h-4" />,
+    badgeColor: "bg-green-500 dark:bg-green-400"
+  },
+  PENDING: {
+    color: "bg-yellow-100 dark:bg-yellow-900/30",
+    textColor: "text-yellow-800 dark:text-yellow-400",
+    label: "Pending",
+    icon: <Clock className="w-4 h-4" />,
+    badgeColor: "bg-yellow-500 dark:bg-yellow-400"
+  },
+  COMPLETED: {
+    color: "bg-blue-100 dark:bg-blue-900/30",
+    textColor: "text-blue-800 dark:text-blue-400",
+    label: "Completed",
+    icon: <CheckCircle className="w-4 h-4" />,
+    badgeColor: "bg-blue-500 dark:bg-blue-400"
+  },
+  CANCELLED: {
+    color: "bg-red-100 dark:bg-red-900/30",
+    textColor: "text-red-800 dark:text-red-400",
+    label: "Cancelled",
+    icon: <AlertCircle className="w-4 h-4" />,
+    badgeColor: "bg-red-500 dark:bg-red-400"
+  },
+};
+
+export default function MyRidesHistory() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "price-high" | "price-low">("recent");
+  const [selectedRideForModal, setSelectedRideForModal] = useState<Ride | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data, isLoading, error } = useGetUserRideQuery({});
+
+  console.log(data?.data, "My Rides API response"); // Debug log
+
+  // Fix: Safely extract rides array and map API fields to interface
+  const rides: Ride[] = useMemo(() => {
+    if (!data) return [];
+
+    try {
+      let rideArray: any[] = [];
+
+      // Handle different response structures
+      if (Array.isArray(data)) {
+        rideArray = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        rideArray = data.data;
+      }
+
+      // Map API fields to interface and filter valid rides
+      const mappedRides = rideArray
+        .map((item: any) => {
+          if (!item || typeof item !== 'object') return null;
+
+          return {
+            _id: item._id,
+            id: item.id,
+            title: item.title || 'Untitled Ride',
+            description: item.description,
+            pickUpLocation: item.pickUpLocation,
+            dropOffLocation: item.dropOffLocation,
+            pickUpTime: item.pickUpTime,
+            dropOffTime: item.dropOffTime,
+            cost: Number(item.cost) || 0,
+            availableSeats: Number(item.availableSeats) || 0,
+            maxGuests: item.totalGuest || item.maxGuests, // Map totalGuest to maxGuests
+            status: item.status || 'PENDING',
+            vehicle: item.rideVehicle || item.vehicle, // Map rideVehicle to vehicle
+            rideType: item.placeType || item.rideType, // Map placeType to rideType
+            amenities: item.amenities || [],
+            images: item.images || [],
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            __v: item.__v
+          };
+        })
+        .filter((item): item is Ride => {
+          return item !== null &&
+            item.title &&
+            item.pickUpLocation &&
+            item.dropOffLocation &&
+            item.pickUpTime &&
+            item.dropOffTime &&
+            typeof item.cost === 'number' &&
+            typeof item.availableSeats === 'number' &&
+            item.status &&
+            item.createdAt;
+        });
+
+      return mappedRides;
+    } catch (err) {
+      console.error("Error extracting rides:", err);
+      return [];
+    }
+  }, [data]);
+
+  console.log("Rides data:", rides); // Debug log
+
+  // Filter and sort rides
+  const filteredRides = useMemo(() => {
+    let filtered = rides.filter(ride => {
+      const matchesSearch =
+        ride.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ride.pickUpLocation?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ride.dropOffLocation?.address?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus = selectedStatus === "ALL" || ride.status === selectedStatus;
+
+      return matchesSearch && matchesStatus;
     });
 
-    const { data: ridesData, isLoading, error, isError } = useGetUserRideQuery(
-        {
-            page,
-            limit: 10,
-            status: filters.status || undefined,
-            startDate: filters.startDate || undefined,
-            endDate: filters.endDate || undefined,
-        },
-        { skip: !hasSessionHint }
-    );
+    // Sort
+    switch (sortBy) {
+      case "oldest":
+        return filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      case "price-high":
+        return filtered.sort((a, b) => b.cost - a.cost);
+      case "price-low":
+        return filtered.sort((a, b) => a.cost - b.cost);
+      case "recent":
+      default:
+        return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+  }, [rides, searchTerm, selectedStatus, sortBy]);
 
-    console.log("Rides query state:", { isLoading, isError, error });
-    console.log("Rides data response:", ridesData);
-    const rides = ridesData?.data || [];
-    const totalPages = ridesData?.meta?.total || 1;
+  const stats = useMemo(() => ({
+    totalRides: rides.length,
+    activeRides: rides.filter(r => r.status === "ACTIVE").length,
+    completedRides: rides.filter(r => r.status === "COMPLETED").length,
+    totalEarnings: rides.reduce((acc, ride) => acc + (ride.cost * ride.availableSeats), 0),
+  }), [rides]);
 
-    console.log("Final rides array:", rides);
-    console.log("Total pages:", totalPages);
+  const handleOpenModal = (ride: Ride) => {
 
-    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        setPage(1);
-    };
+    console.log("Selected ride for modal:", ride); // Debug log
+    setSelectedRideForModal(ride);
+    setIsModalOpen(true);
+  };
 
-    const getRideStatusColor = (status: string) => {
-        switch (status) {
-            case "completed":
-                return "bg-green-100 text-green-800";
-            case "cancelled":
-                return "bg-red-100 text-red-800";
-            case "active":
-                return "bg-blue-100 text-blue-800";
-            case "pending":
-                return "bg-yellow-100 text-yellow-800";
-            case "searching":
-                return "bg-purple-100 text-purple-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRideForModal(null);
+  };
 
+  if (isLoading) {
     return (
-        <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">My Ride History</h1>
-
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-2">Status</label>
-                        <select
-                            name="status"
-                            value={filters.status}
-                            onChange={handleFilterChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">All Rides</option>
-                            <option value="completed">Completed</option>
-                            <option value="active">Active</option>
-                            <option value="searching">Searching</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="pending">Pending</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-2">Start Date</label>
-                        <input
-                            type="date"
-                            name="startDate"
-                            value={filters.startDate}
-                            onChange={handleFilterChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-700 font-medium mb-2">End Date</label>
-                        <input
-                            type="date"
-                            name="endDate"
-                            value={filters.endDate}
-                            onChange={handleFilterChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
-
-                    <div className="flex items-end">
-                        <button
-                            onClick={() => setFilters({ status: "", startDate: "", endDate: "" })}
-                            className="w-full bg-gray-300 hover:bg-gray-400 text-gray-900 px-4 py-2 rounded-lg font-medium transition"
-                        >
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Rides List */}
-            {isError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                    <p className="text-red-600 text-lg mb-2">Error loading rides</p>
-                    <p className="text-red-500 text-sm">{(error as any)?.data?.message || (error as any)?.error || "Something went wrong"}</p>
-                </div>
-            ) : isLoading ? (
-                <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                    <p className="text-gray-600 mt-4">Loading your rides...</p>
-                </div>
-            ) : rides.length > 0 ? (
-                <div className="space-y-4 mb-8">
-                    {rides.map((ride: any) => (
-                        <div
-                            key={ride.id}
-                            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-l-4 border-blue-600"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Route Info */}
-                                <div className="space-y-3">
-                                    <div className="flex items-start gap-3">
-                                        <MapPin className="text-green-600 mt-1 shrink-0" size={20} />
-                                        <div>
-                                            <p className="text-sm text-gray-600">Pickup</p>
-                                            <p className="font-semibold text-gray-900">{ride.pickUpLocation?.address || ride.pickupLocation}</p>
-                                            <p className="text-sm text-gray-500">{ride.pickUpLocation?.address}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3">
-                                        <MapPin className="text-red-600 mt-1 shrink-0" size={20} />
-                                        <div>
-                                            <p className="text-sm text-gray-600">Destination</p>
-                                            <p className="font-semibold text-gray-900">{ride.dropOffLocation?.address || ride.destinationLocation}</p>
-                                            <p className="text-sm text-gray-500">{ride.dropOffLocation?.address}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Ride Details */}
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <DollarSign size={18} />
-                                            <span>Estimated Fare</span>
-                                        </div>
-                                        <span className="font-bold text-lg text-gray-900">${ride.cost || ride.estimatedFare || ride.fare}</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Clock size={18} />
-                                            <span>Duration</span>
-                                        </div>
-                                        <span className="font-semibold text-gray-900">{ride.duration || ride.estimatedDuration} min</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Calendar size={18} />
-                                            <span>Date</span>
-                                        </div>
-                                        <span className="font-semibold text-gray-900">
-                                            {new Date(ride.createdAt || ride.updatedAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Status</span>
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRideStatusColor(ride.status)}`}>
-                                            {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Driver Info (only show if ride is accepted/active/completed) */}
-                            {ride.driver && (
-                                <div className="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={ride.driver.avatar || "https://i.pravatar.cc/48"}
-                                            alt={ride.driver.name}
-                                            className="w-12 h-12 rounded-full object-cover"
-                                        />
-                                        <div>
-                                            <p className="font-semibold text-gray-900">{ride.driver.name}</p>
-                                            <p className="text-sm text-gray-600">{ride.driver.vehicleNumber} • {ride.driver.vehicleModel}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-1">
-                                        <Star className="text-yellow-400" size={18} fill="currentColor" />
-                                        <span className="font-semibold">{ride.driver.rating || 4.8}</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Action Buttons */}
-                            <div className="mt-6 flex gap-3">
-                                <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg font-medium transition">
-                                    View Details
-                                </button>
-
-                                {ride.status === 'completed' && !ride.isRated && (
-                                    <button className="flex-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 py-2 rounded-lg font-medium transition">
-                                        Rate Driver
-                                    </button>
-                                )}
-
-                                {ride.status === 'active' && (
-                                    <button className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg font-medium transition">
-                                        Cancel Ride
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                    <User className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                    <p className="text-gray-600 text-lg mb-4">No rides found</p>
-                    <p className="text-gray-500 mb-6">You haven't booked any rides yet</p>
-                    <a href="/user/add-ride" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition">
-                        Book Your First Ride
-                    </a>
-                </div>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-8">
-                    <button
-                        onClick={() => setPage(Math.max(1, page - 1))}
-                        disabled={page === 1}
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            className={`px-3 py-2 rounded-lg transition ${page === p
-                                ? "bg-blue-600 text-white"
-                                : "border border-gray-300 hover:bg-gray-50"
-                                }`}
-                        >
-                            {p}
-                        </button>
-                    ))}
-
-                    <button
-                        onClick={() => setPage(Math.min(totalPages, page + 1))}
-                        disabled={page === totalPages}
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        Next
-                    </button>
-                </div>
-            )}
-        </div>
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 min-h-screen bg-white dark:bg-gray-950">
+        <Skeleton className="h-12 w-64 mb-8 bg-gray-200 dark:bg-gray-800" />
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-40 w-full mb-4 bg-gray-200 dark:bg-gray-800" />
+        ))}
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 min-h-screen bg-white dark:bg-gray-950">
+        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 p-8 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-3 text-red-600 dark:text-red-400" />
+          <h3 className="text-lg font-semibold text-red-800 dark:text-red-400 mb-2">Failed to Load Rides</h3>
+          <p className="text-red-700 dark:text-red-300">Please try again later</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 min-h-screen bg-white dark:bg-gray-950">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">My Rides History</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage and track all your rides</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: "Total Rides", value: stats.totalRides, icon: Car, color: "blue" },
+          { label: "Active Rides", value: stats.activeRides, icon: CheckCircle, color: "green" },
+          { label: "Completed", value: stats.completedRides, icon: CheckCircle, color: "purple" },
+          { label: "Total Earnings", value: `৳${stats.totalEarnings}`, icon: DollarSign, color: "amber" },
+        ].map((stat, idx) => {
+          const colorMap = {
+            blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+            green: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+            purple: "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800",
+            amber: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
+          };
+          const textColorMap = {
+            blue: "text-blue-600 dark:text-blue-400",
+            green: "text-green-600 dark:text-green-400",
+            purple: "text-purple-600 dark:text-purple-400",
+            amber: "text-amber-600 dark:text-amber-400",
+          };
+          const Icon = stat.icon;
+          return (
+            <div key={idx} className={`rounded-xl border p-6 ${colorMap[stat.color as keyof typeof colorMap]}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</p>
+                  <p className={`text-3xl font-bold mt-2 ${textColorMap[stat.color as keyof typeof textColorMap]}`}>
+                    {stat.value}
+                  </p>
+                </div>
+                <Icon className={`w-8 h-8 ${textColorMap[stat.color as keyof typeof textColorMap]} opacity-50`} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filters Section */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-600" />
+            <input
+              type="text"
+              placeholder="Search by title, location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-600 pointer-events-none" />
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white appearance-none cursor-pointer"
+            >
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PENDING">Pending</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white appearance-none cursor-pointer"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="oldest">Oldest</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="price-low">Price: Low to High</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-600 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Rides List */}
+      {filteredRides.length === 0 ? (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-12 text-center">
+          <Car className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Rides Found</h3>
+          <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredRides.map((ride) => {
+            const rideId = ride._id || ride.id;
+            const status = statusConfig[ride.status as keyof typeof statusConfig] || statusConfig.PENDING;
+            const pickupDate = new Date(ride.pickUpTime);
+
+            return (
+              <div
+                key={rideId}
+                className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 hover:shadow-lg dark:hover:shadow-2xl transition-all duration-300"
+              >
+                {/* Main Ride Card */}
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    {/* Left Section - Route Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-4 gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{ride.title}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {pickupDate.toLocaleDateString()} at {pickupDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Route */}
+                      <div className="space-y-3">
+                        <div className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-400" />
+                            <div className="w-0.5 h-12 bg-gradient-to-b from-green-500 to-red-500 dark:from-green-400 dark:to-red-400" />
+                            <div className="w-3 h-3 rounded-full bg-red-500 dark:bg-red-400" />
+                          </div>
+                          <div className="flex-1 space-y-6">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Pickup</p>
+                              <p className="text-sm text-gray-900 dark:text-white font-medium line-clamp-2">{ride.pickUpLocation?.address}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Dropoff</p>
+                              <p className="text-sm text-gray-900 dark:text-white font-medium line-clamp-2">{ride.dropOffLocation?.address}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Section - Stats */}
+                    <div className="lg:w-64 grid grid-cols-3 gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Seats</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{ride.availableSeats}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Per Seat</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">৳{ride.cost}</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase mb-1">Total</p>
+                        <p className="text-xl text-center font-bold text-blue-600 dark:text-blue-400">৳{ride.cost * ride.availableSeats}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className={`flex items-center justify-center gap-2 px-3 py-1.5 mt-4 rounded-full ${status.color} whitespace-nowrap shrink-0 w-fit mx-auto`}>
+                    <div className={`w-2 h-2 rounded-full ${status.badgeColor} animate-pulse`} />
+                    <span className={`text-sm font-semibold ${status.textColor}`}>{status.label}</span>
+                  </div>
+
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Results Info */}
+      <div className="mt-8 text-center text-gray-600 dark:text-gray-400">
+        <p>Showing {filteredRides.length} of {rides.length} rides</p>
+      </div>
+
+
+
+    </div>
+  );
 }

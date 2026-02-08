@@ -1,343 +1,340 @@
-import { Link } from 'react-router';
-import {
-  Car,
-  Users,
-  Globe,
-  Award,
-  Target,
-  Heart,
-  Shield,
-  TrendingUp,
-  MapPin,
-  Mail,
-  Phone,
-  CheckCircle
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Award, Users, Target, Globe, Shield, Star, ArrowRight } from "lucide-react";
+import { motion } from "motion/react";
+import { useTheme } from "@/hooks/useTheme";
+import { Button } from "@/components/ui/button";
+
+const teamMembers = [
+  {
+    id: 1,
+    name: "Ahmed Hassan",
+    role: "Founder & CEO",
+    image: "https://i.pravatar.cc/300?img=10",
+    bio: "10+ years in transportation tech",
+  },
+  {
+    id: 2,
+    name: "Fatima Khan",
+    role: "Chief Technology Officer",
+    image: "https://i.pravatar.cc/300?img=11",
+    bio: "Expert in scalable systems",
+  },
+  {
+    id: 3,
+    name: "Mohamed Ali",
+    role: "Head of Operations",
+    image: "https://i.pravatar.cc/300?img=12",
+    bio: "15+ years in ride-sharing",
+  },
+  {
+    id: 4,
+    name: "Amira Patel",
+    role: "Chief Safety Officer",
+    image: "https://i.pravatar.cc/300?img=13",
+    bio: "Former safety compliance director",
+  },
+];
+
+const values = [
+  {
+    icon: <Target className="h-8 w-8" />,
+    title: "Safety First",
+    description: "We prioritize the safety of every rider and driver on our platform",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    icon: <Users className="h-8 w-8" />,
+    title: "Community Driven",
+    description: "Building a community of trust between riders and drivers",
+    color: "from-green-500 to-emerald-500",
+  },
+  {
+    icon: <Award className="h-8 w-8" />,
+    title: "Excellence",
+    description: "Committed to providing the highest quality service",
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    icon: <Globe className="h-8 w-8" />,
+    title: "Sustainability",
+    description: "Supporting eco-friendly transportation solutions",
+    color: "from-yellow-500 to-orange-500",
+  },
+];
+
+const stats = [
+  { label: "Active Users", value: "500K+", icon: <Users className="h-6 w-6" /> },
+  { label: "Verified Drivers", value: "50K+", icon: <Shield className="h-6 w-6" /> },
+  { label: "Rides Completed", value: "10M+", icon: <Star className="h-6 w-6" /> },
+  { label: "Cities Covered", value: "50+", icon: <Globe className="h-6 w-6" /> },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.3,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.8 },
+  },
+};
 
 export default function About() {
-  const milestones = [
-    {
-      year: '2019',
-      title: 'SwiftRide Founded',
-      description: 'Started with a mission to revolutionize urban transportation',
-      icon: Target
-    },
-    {
-      year: '2020',
-      title: 'First 100K Rides',
-      description: 'Expanded to 5 major cities with growing rider base',
-      icon: TrendingUp
-    },
-    {
-      year: '2021',
-      title: 'Driver Network Growth',
-      description: 'Onboarded 10,000+ professional drivers across the country',
-      icon: Users
-    },
-    {
-      year: '2022',
-      title: 'Technology Innovation',
-      description: 'Launched AI-powered route optimization and safety features',
-      icon: Shield
-    },
-    {
-      year: '2023',
-      title: 'International Expansion',
-      description: 'Expanded operations to 3 new countries with 50+ cities',
-      icon: Globe
-    },
-    {
-      year: '2024',
-      title: '2 Million Riders',
-      description: 'Serving millions of happy customers with 4.8+ star rating',
-      icon: Award
-    }
-  ];
-
-  const values = [
-    {
-      icon: Heart,
-      title: 'Customer First',
-      description: 'Every decision we make is centered around providing the best experience for our riders and drivers.'
-    },
-    {
-      icon: Shield,
-      title: 'Safety Always',
-      description: 'We prioritize safety above everything else with rigorous driver screening and 24/7 support.'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Continuous Innovation',
-      description: 'We constantly improve our technology and services to meet evolving customer needs.'
-    },
-    {
-      icon: Users,
-      title: 'Community Focused',
-      description: 'We build strong relationships with local communities and contribute to sustainable transportation.'
-    },
-    {
-      icon: Globe,
-      title: 'Environmental Responsibility',
-      description: 'Committed to reducing carbon footprint through efficient routing and eco-friendly initiatives.'
-    },
-    {
-      icon: Award,
-      title: 'Excellence in Service',
-      description: 'We maintain the highest standards of quality and reliability in everything we do.'
-    }
-  ];
-
-  const leadership = [
-    {
-      name: 'Alex Thompson',
-      role: 'CEO & Founder',
-      bio: 'Visionary leader with 15+ years in transportation technology',
-      image: 'AT'
-    },
-    {
-      name: 'Sarah Martinez',
-      role: 'COO',
-      bio: 'Operations expert focused on scaling and efficiency',
-      image: 'SM'
-    },
-    {
-      name: 'David Chen',
-      role: 'CTO',
-      bio: 'Tech innovator driving our digital transformation',
-      image: 'DC'
-    },
-    {
-      name: 'Emily Johnson',
-      role: 'Head of Customer Experience',
-      bio: 'Customer advocate ensuring exceptional service delivery',
-      image: 'EJ'
-    }
-  ];
+  const { theme } = useTheme();
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-purple-700 text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-              About SwiftRide
-            </h1>
-            <p className="text-xl lg:text-2xl text-blue-100 mb-8">
-              We're on a mission to make urban transportation safer, more reliable,
-              and accessible to everyone, everywhere.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100" asChild>
-                <Link to="/register">
-                  Join Our Journey
-                  <Car className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                Contact Us
-                <Mail className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </div>
+    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
+      {/* Hero */}
+      <section className={`relative py-32 overflow-hidden ${theme === "dark" ? "bg-linear-to-br from-gray-950 via-blue-950 to-gray-950" : "bg-linear-to-br from-blue-50 via-white to-cyan-50"}`}>
+        {/* Background decoration */}
+        <div className="absolute inset-0">
+          <div className={`absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 ${theme === "dark" ? "bg-blue-500" : "bg-blue-400"} blur-3xl`}></div>
+          <div className={`absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-20 ${theme === "dark" ? "bg-cyan-500" : "bg-cyan-400"} blur-3xl`}></div>
         </div>
-      </section>
 
-      {/* Mission Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-bold mb-6">Our Mission</h2>
-              <p className="text-lg text-gray-700 mb-6">
-                To revolutionize urban mobility by providing safe, reliable, and affordable
-                transportation solutions that connect communities and improve lives.
-              </p>
-              <p className="text-lg text-gray-700 mb-8">
-                We believe that everyone deserves access to quality transportation that's not
-                just a means to get from point A to point B, but an experience that's safe,
-                comfortable, and enjoyable.
-              </p>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                  <span className="font-medium">2M+ Happy Riders</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                  <span className="font-medium">50K+ Professional Drivers</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                  <span className="font-medium">100+ Cities Covered</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                  <span className="font-medium">4.8/5 Customer Rating</span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8">
-              <div className="aspect-square bg-white rounded-xl shadow-lg flex items-center justify-center">
-                <Globe className="h-32 w-32 text-blue-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <motion.h1 variants={itemVariants} className="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-tight">
+              About <span className="bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-clip-text text-transparent animate-pulse">SwiftRide</span>
+            </motion.h1>
+            <motion.p
+              variants={itemVariants}
+              className={`text-2xl font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"} max-w-4xl mx-auto mb-12 leading-relaxed`}
+            >
+              Revolutionizing urban mobility with cutting-edge technology, unmatched safety, and seamless ride-sharing experiences across the globe.
+            </motion.p>
 
-      {/* Values Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold mb-4">Our Core Values</h2>
-            <p className="text-xl text-gray-600">
-              The principles that guide everything we do
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {values.map((value, index) => (
-              <Card key={index} className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="pt-8 pb-6">
-                  <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                    <value.icon className="h-8 w-8 text-white" />
+            {/* Stats with enhanced design */}
+            <motion.div
+              variants={itemVariants}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-16"
+            >
+              {stats.map((s, idx) => (
+                <motion.div
+                  key={idx}
+                  whileHover={{ y: -10, scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                  className={`relative group p-8 rounded-3xl backdrop-blur-xl border-2 ${theme === "dark"
+                    ? "bg-gray-800/50 border-blue-500/30 hover:bg-gray-700/50 hover:border-blue-400/50"
+                    : "bg-white/70 border-blue-200 hover:bg-white/90 hover:border-blue-400"
+                    } shadow-2xl`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 rounded-3xl transition-all duration-300"></div>
+                  <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    {s.icon}
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">{value.title}</h3>
-                  <p className="text-gray-600">{value.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Timeline Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold mb-4">Our Journey</h2>
-            <p className="text-xl text-gray-600">
-              From a startup idea to a transportation revolution
-            </p>
-          </div>
-          <div className="max-w-4xl mx-auto">
-            <div className="relative">
-              <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-gray-300"></div>
-              {milestones.map((milestone, index) => (
-                <div key={index} className={`relative flex items-center mb-8 ${index % 2 === 0 ? 'justify-start' : 'justify-end'
-                  }`}>
-                  <div className={`w-5/12 ${index % 2 === 0 ? 'text-right pr-8' : 'text-left pl-8'}`}>
-                    <Card className="border-0 shadow-lg">
-                      <CardContent className="pt-6 pb-4">
-                        <div className="flex items-center gap-3 mb-3 justify-end">
-                          <span className="text-sm font-bold text-primary">{milestone.year}</span>
-                          <milestone.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-semibold mb-2">{milestone.title}</h3>
-                        <p className="text-gray-600 text-sm">{milestone.description}</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-primary rounded-full border-4 border-white"></div>
-                </div>
+                  <div className="text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{s.value}</div>
+                  <p className={`text-lg font-semibold ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>{s.label}</p>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Leadership Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold mb-4">Leadership Team</h2>
-            <p className="text-xl text-gray-600">
-              Meet the people driving our vision forward
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {leadership.map((leader, index) => (
-              <Card key={index} className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="pt-8 pb-6">
-                  <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                    {leader.image}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-1">{leader.name}</h3>
-                  <p className="text-primary font-medium mb-3">{leader.role}</p>
-                  <p className="text-gray-600 text-sm">{leader.bio}</p>
-                </CardContent>
-              </Card>
+      {/* Mission & Vision */}
+      <section className={`relative py-32 ${theme === "dark" ? "bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900" : "bg-gradient-to-br from-white via-blue-50 to-white"}`}>
+        {/* Background elements */}
+        <div className="absolute inset-0">
+          <div className={`absolute top-1/2 left-1/4 w-64 h-64 rounded-full opacity-10 ${theme === "dark" ? "bg-cyan-500" : "bg-blue-500"} blur-2xl`}></div>
+          <div className={`absolute bottom-1/2 right-1/4 w-80 h-80 rounded-full opacity-10 ${theme === "dark" ? "bg-blue-500" : "bg-cyan-500"} blur-2xl`}></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+          >
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ duration: 0.3 }}
+              className={`relative group p-10 rounded-3xl backdrop-blur-2xl border-2 ${theme === "dark"
+                ? "bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border-blue-500/20 hover:border-blue-400/40"
+                : "bg-gradient-to-br from-blue-50/80 to-white/80 border-blue-200 hover:border-blue-400"
+                } shadow-2xl`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/5 group-hover:to-cyan-500/5 rounded-3xl transition-all duration-500"></div>
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 p-4 mb-6 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                  <Target className="text-white" />
+                </div>
+                <h2 className="text-3xl font-black mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Our Mission</h2>
+                <p className={`text-lg leading-relaxed ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                  Provide safe, affordable, and accessible transportation to everyone, while
+                  creating economic opportunities for drivers and supporting sustainable urban mobility.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -5 }}
+              transition={{ duration: 0.3 }}
+              className={`relative group p-10 rounded-3xl backdrop-blur-2xl border-2 ${theme === "dark"
+                ? "bg-gradient-to-br from-cyan-900/30 to-blue-900/30 border-cyan-500/20 hover:border-cyan-400/40"
+                : "bg-gradient-to-br from-cyan-50/80 to-white/80 border-cyan-200 hover:border-cyan-400"
+                } shadow-2xl`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 to-blue-500/0 group-hover:from-cyan-500/5 group-hover:to-blue-500/5 rounded-3xl transition-all duration-500"></div>
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 p-4 mb-6 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                  <Globe className="text-white" />
+                </div>
+                <h2 className="text-3xl font-black mb-4 bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">Our Vision</h2>
+                <p className={`text-lg leading-relaxed ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                  Become the most trusted and innovative ride-sharing platform in South Asia,
+                  setting the standard for safety, service quality, and environmental responsibility.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section className={`py-24 ${theme === "dark" ? "bg-gray-950" : "bg-gray-50"}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.h2 variants={itemVariants} className="text-4xl sm:text-5xl font-bold mb-4">
+              Our <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Core Values</span>
+            </motion.h2>
+            <motion.p
+              variants={itemVariants}
+              className={`text-xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}
+            >
+              These principles guide every decision we make
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {values.map((v, idx) => (
+              <motion.div
+                key={idx}
+                variants={itemVariants}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                className={`group p-8 rounded-2xl transition-all duration-300 ${theme === "dark"
+                  ? "bg-gray-800 hover:bg-gray-700 border border-gray-700"
+                  : "bg-white hover:shadow-lg border border-gray-200"
+                  }`}
+              >
+                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${v.color} p-3 mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="text-white">{v.icon}</div>
+                </div>
+                <h3 className="text-xl font-bold mb-2">{v.title}</h3>
+                <p className={theme === "dark" ? "text-gray-400" : "text-gray-600"}>{v.description}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-white text-center">
-            <h2 className="text-3xl font-bold mb-12">SwiftRide by Numbers</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              <div>
-                <div className="text-5xl font-bold mb-2">2M+</div>
-                <div className="text-blue-100">Active Riders</div>
-              </div>
-              <div>
-                <div className="text-5xl font-bold mb-2">50K+</div>
-                <div className="text-blue-100">Professional Drivers</div>
-              </div>
-              <div>
-                <div className="text-5xl font-bold mb-2">100+</div>
-                <div className="text-blue-100">Cities Worldwide</div>
-              </div>
-              <div>
-                <div className="text-5xl font-bold mb-2">4.8/5</div>
-                <div className="text-blue-100">Customer Rating</div>
-              </div>
-            </div>
-          </div>
+      {/* Team */}
+      <section className={`py-24 ${theme === "dark" ? "bg-gray-900" : "bg-white"}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.h2 variants={itemVariants} className="text-4xl sm:text-5xl font-bold mb-4">
+              Meet Our <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Leadership</span>
+            </motion.h2>
+            <motion.p
+              variants={itemVariants}
+              className={`text-xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}
+            >
+              Experienced professionals dedicated to transforming mobility
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {teamMembers.map((m) => (
+              <motion.div
+                key={m.id}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+                className={`overflow-hidden rounded-2xl ${theme === "dark"
+                  ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700"
+                  : "bg-white border border-gray-200"
+                  }`}
+              >
+                <img src={m.image} alt={m.name} className="w-full h-44 object-cover" />
+                <div className="p-6">
+                  <h3 className="text-lg font-bold">{m.name}</h3>
+                  <p className="text-blue-500 font-medium text-sm mb-2">{m.role}</p>
+                  <p className={theme === "dark" ? "text-gray-400" : "text-gray-600"}>{m.bio}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold mb-4">Get in Touch</h2>
-            <p className="text-xl text-gray-600">
-              Have questions? We'd love to hear from you
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="pt-8 pb-6">
-                <Phone className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Call Us</h3>
-                <p className="text-gray-600">1-800-RIDENOW</p>
-                <p className="text-gray-500 text-sm">24/7 Support</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="pt-8 pb-6">
-                <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Email Us</h3>
-                <p className="text-gray-600">support@swiftride.com</p>
-                <p className="text-gray-500 text-sm">Response within 24hrs</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center border-0 shadow-lg">
-              <CardContent className="pt-8 pb-6">
-                <MapPin className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Visit Us</h3>
-                <p className="text-gray-600">123 Main St, City</p>
-                <p className="text-gray-500 text-sm">Mon-Fri, 9AM-6PM</p>
-              </CardContent>
-            </Card>
-          </div>
+      {/* CTA */}
+      <section className={`py-24 ${theme === "dark" ? "bg-gray-950" : "bg-gray-50"}`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <motion.h2 variants={itemVariants} className="text-4xl sm:text-5xl font-bold mb-6">
+              Build the future of <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Mobility</span>
+            </motion.h2>
+            <motion.p
+              variants={itemVariants}
+              className={`text-xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"} mb-10`}
+            >
+              Join millions of riders and drivers on the platform built for trust and speed.
+            </motion.p>
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-4 text-lg rounded-xl font-semibold group">
+                Contact Us
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button variant="outline" className={`px-8 py-4 text-lg rounded-xl font-semibold ${theme === "dark" ? "border-gray-700 hover:bg-gray-800" : "border-gray-300 hover:bg-gray-100"}`}>
+                Learn More
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
+
     </div>
   );
 }
