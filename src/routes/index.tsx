@@ -75,10 +75,10 @@ export const router = createBrowserRouter([
         path: "my-rides/:id",
         Component: MyRideDetails,
       },
-      // {
-      //   path: "payment-history",
-      //   Component: PaymentHistory,
-      // },
+      {
+        path: "payment-history",
+        Component: PaymentHistory,
+      },
     ],
   },
   {

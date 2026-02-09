@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export default function ManageRides() {
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [selectedRideRequest, setSelectedRideRequest] = useState<any>(null);
-  const { data, isLoading } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
+  const { data, isLoading, refetch: refetchRides } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
   const [acceptRide, { isLoading: acceptLoading }] = useAcceptRideRequestMutation();
   const [rejectRide, { isLoading: rejectLoading }] = useRejectRideRequestMutation();
   const { data: driverProfileData } = useGetDriverProfileQuery(undefined, { skip: !hasSessionHint });
@@ -37,6 +37,7 @@ export default function ManageRides() {
   const handleAcceptRide = async (rideId: string) => {
     try {
       await acceptRide({ id: rideId }).unwrap();
+      await refetchRides();
       toast.success("Ride accepted successfully!");
       setSelectedRideRequest(null);
     } catch (error: any) {
@@ -48,6 +49,7 @@ export default function ManageRides() {
   const handleRejectRide = async (rideId: string) => {
     try {
       await rejectRide({ id: rideId }).unwrap();
+      await refetchRides();
       toast.success("Ride rejected successfully!");
       setSelectedRideRequest(null);
     } catch (error: any) {
@@ -57,7 +59,7 @@ export default function ManageRides() {
 
   const handleToggleAvailability = async () => {
     try {
-      await toggleAvailability().unwrap();
+      await toggleAvailability({}).unwrap();
       toast.success(isOnline ? "You are now offline" : "You are now online");
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to update availability");
@@ -119,6 +121,7 @@ export default function ManageRides() {
             const fareValue = request.fare || request.cost || request.price || "N/A";
             const statusValue = (request.status || "Active").toString();
             const normalizedStatus = statusValue.toLowerCase();
+            const isAssigned = Boolean(request.driver) || normalizedStatus === "accepted";
             const statusClasses =
               normalizedStatus === "accepted"
                 ? "bg-green-100 text-green-800"
@@ -157,7 +160,7 @@ export default function ManageRides() {
 
                 {/* Dropoff Location */}
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <MapPin className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-muted-foreground">Dropoff</p>
                     <p className="font-medium">
@@ -204,10 +207,10 @@ export default function ManageRides() {
                       <Button
                         onClick={() => setSelectedRideRequest(request)}
                         className="flex-1 bg-green-600 hover:bg-green-700"
-                        disabled={acceptLoading}
+                        disabled={acceptLoading || isAssigned}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Accept
+                        {isAssigned ? "Accepted" : "Accept"}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700">

@@ -3,52 +3,54 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useTheme } from "@/hooks/useTheme";
-import { useGetRidesQuery, useCancelRideMutation } from "@/redux/features/ride/ride.api";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useGetDriverRideHistoryQuery } from "@/redux/features/ride/ride.api";
+import { MapPin, DollarSign, Loader2, XCircle, Car, Check, X, Calendar, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { MapPin, Clock, DollarSign, Loader2, XCircle, Car } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
+type FilterStatus = "all" | "accepted" | "rejected" | "pending" | "completed" | "active";
 
 export default function DriverDashboard() {
   const { theme } = useTheme();
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
-  const [selectedRide, setSelectedRide] = useState<any>(null);
-  const { data: ridesData, isLoading, refetch } = useGetRidesQuery({}, { skip: !hasSessionHint });
-  const [cancelRide, { isLoading: cancelLoading }] = useCancelRideMutation();
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const { data: ridesData, isLoading } = useGetDriverRideHistoryQuery(
+    { page: 1, limit: 50 },
+    { skip: !hasSessionHint }
+  );
 
   const isDark = theme === "dark";
   const rides = ridesData?.data || [];
 
   const normalizedStatus = (status?: string) => (status || "").toLowerCase();
+  
+  // Calculate all ride counts
   const totalRides = rides.length;
+  const acceptedRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "accepted").length;
+  const rejectedRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "rejected").length;
+  const pendingRides = rides.filter((ride: any) => {
+    const status = normalizedStatus(ride.status);
+    return status === "active" || status === "requested" || status === "pending";
+  }).length;
+  const completedRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "completed").length;
   const activeRides = rides.filter((ride: any) => {
     const status = normalizedStatus(ride.status);
     return status === "active" || status === "requested" || status === "accepted" || status === "in_transit";
   }).length;
-  const completedRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "completed").length;
-  const cancelledRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "cancelled").length;
+  const _cancelledRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "cancelled").length;
 
-  const handleCancelRide = async (rideId: string) => {
-    try {
-      await cancelRide({ id: rideId }).unwrap();
-      toast.success("Ride cancelled successfully!");
-      refetch();
-      setSelectedRide(null);
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to cancel ride");
-    }
-  };
+  // Filter rides based on selected status
+  const filteredRides = rides.filter((ride: any) => {
+    const status = normalizedStatus(ride.status);
+    if (filterStatus === "all") return true;
+    if (filterStatus === "pending") return status === "active" || status === "requested" || status === "pending";
+    if (filterStatus === "active") return status === "active" || status === "requested" || status === "accepted" || status === "in_transit";
+    return status === filterStatus;
+  }
+  );
 
-  const getStatusColor = (status: string, isDark: boolean) => {
+  const getRideStatusColor = (status: string) => {
     const normalized = normalizedStatus(status);
     if (isDark) {
       switch (normalized) {
@@ -90,320 +92,254 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 px-2 sm:px-0">
-      {/* Hero Section with Stats */}
-      <div className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border transition-all duration-300 ${
-        isDark 
-          ? "border-blue-900/30 bg-linear-to-r from-blue-950 via-blue-900 to-cyan-900 shadow-2xl shadow-blue-900/20" 
-          : "border-blue-100 bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 shadow-lg"
-      } p-4 sm:p-6 lg:p-8 text-white`}>
-        {/* Animated Background Blobs */}
-        <div className={`absolute -top-16 -right-16 h-40 sm:h-56 w-40 sm:w-56 rounded-full blur-3xl ${
-          isDark ? "bg-blue-500/5" : "bg-white/10"
-        }`} />
-        <div className={`absolute -bottom-20 -left-10 h-40 sm:h-56 w-40 sm:w-56 rounded-full blur-3xl ${
-          isDark ? "bg-cyan-500/5" : "bg-cyan-300/20"
-        }`} />
-
-        <div className="relative">
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div className={`rounded-xl sm:rounded-2xl p-2 sm:p-3 ${isDark ? "bg-blue-900/40" : "bg-white/10"}`}>
-              <Car className="h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Driver Hub</h1>
-              <p className={`text-xs sm:text-sm ${isDark ? "text-blue-200/70" : "text-white/80"}`}>
-                Track rides, accept requests, and manage your earnings
-              </p>
-            </div>
+          <div>
+            <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+              Driver Dashboard
+            </h1>
+            <p className={`text-sm sm:text-base mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Available rides waiting for you to accept or reject
+            </p>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
             {[
-              { label: "Total Rides", value: totalRides, icon: "📊" },
+              { label: "Total", value: totalRides, icon: "📊" },
+              { label: "Accepted", value: acceptedRides, icon: "✅" },
+              { label: "Rejected", value: rejectedRides, icon: "❌" },
+              { label: "Pending", value: pendingRides, icon: "⏳" },
               { label: "Active", value: activeRides, icon: "🚀" },
-              { label: "Completed", value: completedRides, icon: "✅" },
-              { label: "Cancelled", value: cancelledRides, icon: "❌" },
+              { label: "Completed", value: completedRides, icon: "🎯" },
             ].map((stat, idx) => (
               <div
                 key={idx}
-                className={`rounded-lg sm:rounded-2xl p-3 sm:p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 ${
-                  isDark ? "bg-white/5 border border-white/10" : "bg-white/10 border border-white/20"
+                className={`rounded-lg sm:rounded-xl p-3 sm:p-4 border transition-all duration-300 hover:shadow-lg ${
+                  isDark
+                    ? "border-slate-700 bg-slate-900"
+                    : "border-gray-200 bg-white"
                 }`}
               >
-                <p className={`text-xs uppercase font-semibold ${isDark ? "text-blue-200/60" : "text-white/70"}`}>
-                  {stat.label}
-                </p>
-                <p className="text-xl sm:text-2xl font-bold mt-1">{stat.value}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                      {stat.label}
+                    </p>
+                    <p className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                  <span className="text-2xl">{stat.icon}</span>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Empty State */}
-      {rides.length === 0 ? (
-        <Card className={`border-2 border-dashed transition-all duration-300 ${
-          isDark 
-            ? "border-blue-900/50 bg-gradient-to-br from-blue-950/30 via-slate-900/30 to-cyan-950/30" 
-            : "border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50"
-        }`}>
-          <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 lg:py-16">
-            <div className={`rounded-2xl p-3 sm:p-4 ${isDark ? "bg-blue-900/40" : "bg-white"} shadow-lg`}>
-              <Car className={`h-10 w-10 sm:h-12 sm:w-12 ${isDark ? "text-blue-400" : "text-blue-500"}`} />
+       
+
+          {/* Rides List */}
+          {rides.length === 0 ? (
+            <div className={`rounded-xl sm:rounded-2xl p-8 sm:p-12 text-center border transition-all duration-300 ${
+              isDark
+                ? "border-slate-700 bg-slate-900"
+                : "border-gray-200 bg-white"
+            }`}>
+              <div className={`rounded-2xl p-3 sm:p-4 w-fit mx-auto ${isDark ? "bg-blue-900/40" : "bg-blue-50"} shadow-lg`}>
+                <Car className={`h-10 w-10 sm:h-12 sm:w-12 mx-auto ${isDark ? "text-blue-400" : "text-blue-500"}`} />
+              </div>
+              <p className={`text-lg sm:text-xl font-semibold mt-4 ${isDark ? "text-white" : "text-gray-800"}`}>
+                No rides available
+              </p>
+              <p className={`text-sm text-center max-w-md mt-2 mx-auto ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Check back later for available rides or go online to start accepting requests.
+              </p>
             </div>
-            <p className={`mt-4 text-lg sm:text-xl font-semibold ${isDark ? "text-white" : "text-gray-800"}`}>
-              No rides yet
-            </p>
-            <p className={`text-sm text-center max-w-md mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              Once riders request trips, they will show up here for you to manage and accept.
-            </p>
-            <Button
-              className={`mt-5 transition-all duration-300 ${
-                isDark
-                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500"
-                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-              }`}
-              onClick={() => window.location.href = "/driver/manage-rides"}
-            >
-              Accept a Ride
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
-          {rides.map((ride: any) => (
-            <Card 
-              key={ride._id} 
-              className={`group overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                isDark
-                  ? "border-slate-700 bg-slate-900 hover:shadow-blue-900/30"
-                  : "border-gray-200 bg-white hover:shadow-blue-100"
-              }`}
-            >
-              {/* Gradient Overlay on Hover */}
-              <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/5 via-cyan-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${
-                isDark ? "via-cyan-500/3" : ""
-              }`} />
-
-              <CardHeader className="relative pb-3 sm:pb-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className={`text-base sm:text-lg truncate ${isDark ? "text-white" : "text-gray-900"}`}>
-                      {ride.title}
-                    </CardTitle>
-                    <CardDescription className={`text-xs sm:text-sm line-clamp-2 ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}>
-                      {ride.description || "No description"}
-                    </CardDescription>
-                  </div>
-                  <Badge className={getStatusColor(ride.status || "Active", isDark)}>
-                    <span className="text-xs sm:text-sm">{ride.status || "Active"}</span>
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="relative space-y-3 sm:space-y-4">
-                {/* Pickup Location */}
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <MapPin className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 ${
-                    isDark ? "text-blue-400" : "text-blue-600"
-                  }`} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                      Pickup
-                    </p>
-                    <p className={`text-xs sm:text-sm font-medium truncate ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}>
-                      {ride.pickUpLocation?.address || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Dropoff Location */}
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <MapPin className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 ${
-                    isDark ? "text-red-400" : "text-red-600"
-                  }`} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                      Dropoff
-                    </p>
-                    <p className={`text-xs sm:text-sm font-medium truncate ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}>
-                      {ride.dropOffLocation?.address || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Vehicle Type */}
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <Car className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 ${
-                    isDark ? "text-green-400" : "text-green-600"
-                  }`} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                      Vehicle
-                    </p>
-                    <p className={`text-xs sm:text-sm font-medium truncate ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}>
-                      {ride.rideType?.rideVehicle || ride.vehicle || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Cost */}
-                {ride.cost && (
-                  <div className="flex items-start gap-2 sm:gap-3">
-                    <DollarSign className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 ${
-                      isDark ? "text-emerald-400" : "text-emerald-600"
-                    }`} />
-                    <div>
-                      <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                        Cost
-                      </p>
-                      <p className={`text-sm sm:text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-                        ${ride.cost}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Requested At */}
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <Clock className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 ${
-                    isDark ? "text-gray-500" : "text-gray-600"
-                  }`} />
-                  <div>
-                    <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                      Requested
-                    </p>
-                    <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}>
-                      {new Date(ride.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 sm:pt-4">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedRide(ride)}
-                        className={`flex-1 text-xs sm:text-sm h-8 sm:h-9 transition-all duration-300 ${
-                          isDark
-                            ? "border-slate-700 text-blue-400 hover:bg-slate-800"
-                            : "border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        Details
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className={`max-w-2xl ${isDark ? "border-slate-700 bg-slate-900" : ""}`}>
-                      <DialogHeader>
-                        <DialogTitle className={isDark ? "text-white" : ""}>
-                          {ride.title}
-                        </DialogTitle>
-                        <DialogDescription className={isDark ? "text-gray-400" : ""}>
-                          {ride.description || "No description provided"}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className={`p-4 rounded-lg space-y-2 ${
-                            isDark 
-                              ? "bg-slate-800 border border-slate-700" 
-                              : "bg-gray-50 border border-gray-200"
-                          }`}>
-                            <h4 className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : ""}`}>
-                              Trip Details
-                            </h4>
-                            <div className="space-y-1 text-xs sm:text-sm">
-                              <p>
-                                <span className={isDark ? "text-gray-400" : "text-gray-600"}>Pickup:</span> 
-                                <span className={`ml-2 ${isDark ? "text-white" : ""}`}>
-                                  {ride.pickUpLocation?.address}
-                                </span>
-                              </p>
-                              <p>
-                                <span className={isDark ? "text-gray-400" : "text-gray-600"}>Dropoff:</span> 
-                                <span className={`ml-2 ${isDark ? "text-white" : ""}`}>
-                                  {ride.dropOffLocation?.address}
-                                </span>
-                              </p>
-                              <p>
-                                <span className={isDark ? "text-gray-400" : "text-gray-600"}>Vehicle:</span> 
-                                <span className={`ml-2 ${isDark ? "text-white" : ""}`}>
-                                  {ride.rideType?.rideVehicle || ride.vehicle}
-                                </span>
-                              </p>
-                              {ride.cost && (
-                                <p>
-                                  <span className={isDark ? "text-gray-400" : "text-gray-600"}>Cost:</span> 
-                                  <span className={`ml-2 ${isDark ? "text-white" : ""}`}>
-                                    ${ride.cost}
-                                  </span>
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className={`p-4 rounded-lg space-y-2 ${
-                            isDark 
-                              ? "bg-slate-800 border border-slate-700" 
-                              : "bg-gray-50 border border-gray-200"
-                          }`}>
-                            <h4 className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : ""}`}>
-                              Status
-                            </h4>
-                            <Badge className={getStatusColor(ride.status || "Active", isDark)}>
-                              {ride.status || "Active"}
-                            </Badge>
-                            <p className={`text-xs sm:text-sm mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                              Requested on {new Date(ride.createdAt).toLocaleDateString()}
+          ) : filteredRides.length === 0 ? (
+            <div className={`rounded-xl sm:rounded-2xl p-8 sm:p-12 text-center border transition-all duration-300 ${
+              isDark
+                ? "border-slate-700 bg-slate-900"
+                : "border-gray-200 bg-white"
+            }`}>
+              <div className={`rounded-2xl p-3 sm:p-4 w-fit mx-auto ${isDark ? "bg-blue-900/40" : "bg-blue-50"} shadow-lg`}>
+                <XCircle className={`h-10 w-10 sm:h-12 sm:w-12 mx-auto ${isDark ? "text-blue-400" : "text-blue-500"}`} />
+              </div>
+              <p className={`text-lg sm:text-xl font-semibold mt-4 ${isDark ? "text-white" : "text-gray-800"}`}>
+                No {filterStatus !== "all" ? filterStatus : ""} rides
+              </p>
+              <p className={`text-sm text-center max-w-md mt-2 mx-auto ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                No rides found with the selected filter. Try changing your filter or check back later.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {filteredRides.map((ride: any) => {
+                const status = normalizedStatus(ride.status);
+                return (
+                  <div
+                    key={ride._id}
+                    className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-l-4 transition-all duration-300 hover:shadow-lg ${
+                      status === "accepted"
+                        ? isDark
+                          ? "border-l-emerald-500 border-slate-700 bg-slate-900 hover:shadow-emerald-900/20"
+                          : "border-l-emerald-500 border-gray-200 bg-white hover:shadow-emerald-100"
+                        : status === "rejected"
+                          ? isDark
+                            ? "border-l-red-500 border-slate-700 bg-slate-900 hover:shadow-red-900/20"
+                            : "border-l-red-500 border-gray-200 bg-white hover:shadow-red-100"
+                          : isDark
+                            ? "border-l-yellow-500 border-slate-700 bg-slate-900 hover:shadow-yellow-900/20"
+                            : "border-l-yellow-500 border-gray-200 bg-white hover:shadow-yellow-100"
+                    }`}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      {/* Route Info */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <MapPin
+                            className={`${isDark ? "text-emerald-400" : "text-emerald-600"} mt-0.5 shrink-0 w-4 h-4 sm:w-5 sm:h-5`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>From</p>
+                            <p className={`font-semibold text-xs sm:text-sm truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                              {ride.pickUpLocation?.address || "N/A"}
                             </p>
                           </div>
                         </div>
 
-                        {(ride.status === "Active" || !ride.status) && (
-                          <div className="flex gap-2">
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className={`flex-1 text-xs sm:text-sm ${
-                                  isDark
-                                    ? "border-slate-700 text-gray-300 hover:bg-slate-800"
-                                    : ""
-                                }`}
-                              >
-                                Close
-                              </Button>
-                            </DialogTrigger>
-                            <Button
-                              variant="destructive"
-                              className="flex-1 text-xs sm:text-sm"
-                              onClick={() => handleCancelRide(ride._id)}
-                              disabled={cancelLoading}
-                            >
-                              {cancelLoading ? "Cancelling..." : "Cancel Ride"}
-                            </Button>
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <MapPin
+                            className={`${isDark ? "text-red-400" : "text-red-600"} mt-0.5 shrink-0 w-4 h-4 sm:w-5 sm:h-5`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>To</p>
+                            <p className={`font-semibold text-xs sm:text-sm truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                              {ride.dropOffLocation?.address || "N/A"}
+                            </p>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                      {/* Ride Details */}
+                      <div className="space-y-2 sm:space-y-3">
+                        <div className="flex justify-between items-center">
+                          <div className={`flex items-center gap-2 text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            <DollarSign size={16} className="sm:w-5 sm:h-5" />
+                            <span>Fare</span>
+                          </div>
+                          <span className={`font-bold text-sm sm:text-lg ${isDark ? "text-emerald-400" : "text-gray-900"}`}>
+                            ${ride.cost ?? "N/A"}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <div className={`flex items-center gap-2 text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            <Calendar size={16} className="sm:w-5 sm:h-5" />
+                            <span>Date</span>
+                          </div>
+                          <span className={`font-semibold text-xs sm:text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                            {new Date(ride.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className={`text-xs sm:text-sm flex items-center gap-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            Status
+                          </span>
+                          <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getRideStatusColor(ride.status || "")}`}>
+                            {ride.status || "Pending"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rider Info */}
+                    <div className={`mt-4 sm:mt-6 pt-4 sm:pt-6 border-t transition-colors ${isDark ? "border-slate-700" : "border-gray-200"} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0`}>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <img
+                          src={ride.user?.picture || "https://i.pravatar.cc/48"}
+                          alt={ride.user?.name || "Rider"}
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-gray-300"
+                        />
+                        <div className="min-w-0">
+                          <p className={`font-semibold text-xs sm:text-sm truncate ${isDark ? "text-white" : "text-gray-900"}`}>
+                            {ride.user?.name || "Rider"}
+                          </p>
+                          <p className={`text-xs truncate ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            {ride.user?.phone || "No phone"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Star className="text-yellow-400 w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
+                        <span className={`font-semibold text-xs sm:text-sm ${isDark ? "text-white" : "text-gray-900"}`}>
+                          4.8
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6">
+                      {status !== "accepted" && status !== "rejected" && status !== "completed" ? (
+                        <>
+                          <Button
+                            className={`flex-1 text-xs sm:text-sm h-8 sm:h-9 transition-all duration-300 ${
+                              isDark
+                                ? "bg-emerald-900/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-800"
+                                : "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200"
+                            }`}
+                            onClick={() => toast.success("Accept ride functionality")}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            className={`flex-1 text-xs sm:text-sm h-8 sm:h-9 transition-all duration-300 ${
+                              isDark
+                                ? "bg-red-900/40 hover:bg-red-900/60 text-red-400 border border-red-800"
+                                : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
+                            }`}
+                            onClick={() => toast.success("Reject ride functionality")}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          disabled
+                          className={`flex-1 text-xs sm:text-sm h-8 sm:h-9 ${
+                            status === "accepted"
+                              ? isDark
+                                ? "bg-emerald-900/40 text-emerald-400"
+                                : "bg-emerald-100 text-emerald-800"
+                              : status === "rejected"
+                                ? isDark
+                                  ? "bg-red-900/40 text-red-400"
+                                  : "bg-red-100 text-red-800"
+                                : isDark
+                                  ? "bg-blue-900/40 text-blue-400"
+                                  : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {status === "accepted"
+                            ? "✓ Accepted"
+                            : status === "rejected"
+                              ? "✗ Rejected"
+                              : "✓ Completed"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

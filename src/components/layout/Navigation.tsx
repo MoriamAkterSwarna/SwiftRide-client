@@ -116,6 +116,20 @@ export default function Navigation() {
     }
   };
 
+  const getProfileLink = () => {
+    if (!currentUser) return '/login';
+    switch (currentUser?.role) {
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        return '/admin/profile';
+      case 'DRIVER':
+        return '/driver/profile';
+      case 'USER':
+      default:
+        return '/user/profile';
+    }
+  };
+
   const isActivePath = (path: string) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -268,7 +282,7 @@ export default function Navigation() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/user/profile" className="flex items-center gap-2">
+                      <Link to={getProfileLink()} className="flex items-center gap-2">
                         <Settings className="h-4 w-4" />
                         Profile Settings
                       </Link>
@@ -371,7 +385,7 @@ export default function Navigation() {
                       className="w-full justify-start"
                       asChild
                     >
-                      <Link to="/user/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link to={getProfileLink()} onClick={() => setIsMobileMenuOpen(false)}>
                         <Settings className="h-4 w-4 mr-2" />
                         Profile Settings
                       </Link>

@@ -1,8 +1,34 @@
 import { useTheme } from "@/hooks/useTheme";
+import { Link } from "react-router";
 
 export default function Footer() {
-
   const { theme } = useTheme();
+  const year = new Date().getFullYear();
+  const footerSections = [
+    {
+      title: "Company",
+      links: [
+        { label: "About", href: "/about" },
+        { label: "Contact", href: "/contact" },
+      ],
+    },
+    {
+      title: "Service",
+      links: [
+        { label: "Features", href: "/features" },
+        { label: "FAQ", href: "/faq" },
+        { label: "Help Line", href: "/help" },
+      ],
+    },
+    {
+      title: "Legal",
+      links: [
+        { label: "Privacy", href: "/faq" },
+        { label: "Terms", href: "/faq" },
+        { label: "Security", href: "/faq" },
+      ],
+    },
+  ];
   return (
     <>
 
@@ -18,28 +44,18 @@ export default function Footer() {
                 Your trusted ride-sharing partner
               </p>
             </div>
-            {[/* eslint-disable-next-line */
-              {
-                title: "Company",
-                links: ["About", "Contact", "Blog", "Careers"],
-              },
-              {
-                title: "Service",
-                links: ["Ride", "Pricing", "Safety", "FAQ"],
-              },
-              {
-                title: "Legal",
-                links: ["Privacy", "Terms", "Security", "Compliance"],
-              },
-            ].map((col, idx) => (
+            {footerSections.map((col, idx) => (
               <div key={idx}>
                 <h4 className="font-semibold mb-4">{col.title}</h4>
                 <ul className="space-y-2">
                   {col.links.map((link, linkIdx) => (
                     <li key={linkIdx}>
-                      <a href="#" className={`${theme === "dark" ? "text-gray-400 hover:text-white" : "text-gray-400 hover:text-white"} transition-colors`}>
-                        {link}
-                      </a>
+                      <Link
+                        to={link.href}
+                        className={`${theme === "dark" ? "text-gray-400 hover:text-white" : "text-gray-400 hover:text-white"} transition-colors`}
+                      >
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -47,7 +63,7 @@ export default function Footer() {
             ))}
           </div>
           <div className={`border-t ${theme === "dark" ? "border-gray-800" : "border-gray-700"} pt-8 text-center ${theme === "dark" ? "text-gray-400" : "text-gray-400"}`}>
-            <p> 2024 SwiftRide. All rights reserved.</p>
+            <p>{year} SwiftRide. All rights reserved.</p>
           </div>
         </div>
       </footer>

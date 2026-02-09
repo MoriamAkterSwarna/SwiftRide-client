@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -18,10 +19,19 @@ import { useTheme } from "@/hooks/useTheme";
 import { motion } from "motion/react"
 import SearchBooking from "@/components/HomePage/SearchBooking";
 import  Banner from "@/components/HomePage/Banner";
+import { useAppSelector } from "@/redux/hook";
+import { useUserInfoQuery } from "@/redux/features/auth/auth.api";
+import { role } from "@/constants/role";
 
 
 const Home = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
+  const { data: userInfo } = useUserInfoQuery(undefined, {
+    skip: !hasSessionHint,
+  });
+  const userRole = userInfo?.data?.data?.role;
  
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
@@ -145,6 +155,14 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [testimonials.length]);
 
+  const handleBookNow = () => {
+    if (userRole === role.user) {
+      navigate("/user/add-ride");
+      return;
+    }
+    navigate("/login");
+  };
+
   return (
     <div className={`min-h-screen ${theme === "dark" ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
   
@@ -242,7 +260,10 @@ const Home = () => {
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-3xl font-bold text-blue-500">{ride.price}</span>
-                    <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg group-hover:translate-x-1 transition-transform">
+                    <Button
+                      onClick={handleBookNow}
+                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg group-hover:translate-x-1 transition-transform"
+                    >
                       Book Now <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>

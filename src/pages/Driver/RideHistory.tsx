@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useTheme } from "@/hooks/useTheme";
-import { MapPin, Calendar, DollarSign, Clock, Star } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Clock, Star, X } from "lucide-react";
 import { useGetDriverRideHistoryQuery } from "@/redux/features/ride/ride.api";
 
 interface RootState {
@@ -30,6 +30,7 @@ export default function RideHistory() {
   const isDark = theme === "dark";
   const hasSessionHint = useSelector((state: RootState) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
   const [filters, setFilters] = useState({
     status: "",
@@ -291,11 +292,13 @@ export default function RideHistory() {
                   </div>
 
                   {/* Action Button */}
-                  <button className={`mt-4 w-full py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 ${
-                    isDark
-                      ? "bg-blue-900/40 hover:bg-blue-900/60 text-blue-400 border border-blue-800"
-                      : "bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100"
-                  }`}>
+                  <button
+                    onClick={() => setSelectedRide(ride)}
+                    className={`mt-4 w-full py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-300 ${
+                      isDark
+                        ? "bg-blue-900/40 hover:bg-blue-900/60 text-blue-400 border border-blue-800"
+                        : "bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100"
+                    }`}>
                     View Details
                   </button>
                 </div>
@@ -370,6 +373,155 @@ export default function RideHistory() {
             </div>
           )}
         </div>
+
+        {/* Ride Details Modal */}
+        {selectedRide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className={`rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${
+              isDark
+                ? "bg-slate-900 border border-slate-700"
+                : "bg-white border border-gray-200"
+            }`}>
+              {/* Modal Header */}
+              <div className={`sticky top-0 flex items-center justify-between p-4 sm:p-6 border-b transition-all duration-300 ${
+                isDark
+                  ? "border-slate-700 bg-slate-900"
+                  : "border-gray-200 bg-white"
+              }`}>
+                <h2 className={`text-lg sm:text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                  Ride Details
+                </h2>
+                <button
+                  onClick={() => setSelectedRide(null)}
+                  className={`p-1 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-slate-800 text-gray-400"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                {/* Route Information */}
+                <div>
+                  <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                    Route Information
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-start gap-3">
+                      <MapPin className={`${isDark ? "text-emerald-400" : "text-emerald-600"} mt-1 shrink-0 w-4 h-4 sm:w-5 sm:h-5`} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Pickup Location</p>
+                        <p className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : "text-gray-900"}`}>
+                          {selectedRide.pickUpLocation?.address || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <MapPin className={`${isDark ? "text-red-400" : "text-red-600"} mt-1 shrink-0 w-4 h-4 sm:w-5 sm:h-5`} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Dropoff Location</p>
+                        <p className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : "text-gray-900"}`}>
+                          {selectedRide.dropOffLocation?.address || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ride Information */}
+                <div>
+                  <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                    Ride Information
+                  </h3>
+                  <div className={`grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all duration-300 ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800"
+                      : "border-gray-200 bg-gray-50"
+                  }`}>
+                    <div>
+                      <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Fare</p>
+                      <p className={`font-bold text-sm sm:text-lg mt-1 ${isDark ? "text-emerald-400" : "text-gray-900"}`}>
+                        ${selectedRide.cost ?? "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Status</p>
+                      <p className={`font-bold text-xs sm:text-sm mt-1 px-2 py-1 rounded-full inline-block ${getRideStatusColor(selectedRide.status || "")}`}>
+                        {selectedRide.status || "Unknown"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Date</p>
+                      <p className={`font-semibold text-xs sm:text-sm mt-1 ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {new Date(selectedRide.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Time</p>
+                      <p className={`font-semibold text-xs sm:text-sm mt-1 ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {new Date(selectedRide.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Passenger Information */}
+                <div>
+                  <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                    Passenger Information
+                  </h3>
+                  <div className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all duration-300 ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800"
+                      : "border-gray-200 bg-gray-50"
+                  }`}>
+                    <img
+                      src={selectedRide.user?.picture || "https://i.pravatar.cc/128"}
+                      alt={selectedRide.user?.name || "Passenger"}
+                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
+                    />
+                    <div className="flex-1">
+                      <p className={`font-bold text-sm sm:text-base ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {selectedRide.user?.name || "Passenger"}
+                      </p>
+                      <p className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                        {selectedRide.user?.phone || "No phone"}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="text-yellow-400 w-4 h-4" fill="currentColor" />
+                        <span className={`text-xs sm:text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                          4.8
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className={`flex gap-2 sm:gap-3 p-4 sm:p-6 border-t transition-all duration-300 ${
+                isDark
+                  ? "border-slate-700 bg-slate-900"
+                  : "border-gray-200 bg-white"
+              }`}>
+                <button
+                  onClick={() => setSelectedRide(null)}
+                  className={`flex-1 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    isDark
+                      ? "bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-200"
+                  }`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

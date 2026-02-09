@@ -4,11 +4,29 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router";
+import { useAppSelector } from "@/redux/hook";
+import { useUserInfoQuery } from "@/redux/features/auth/auth.api";
+import { role } from "@/constants/role";
 
 const SearchBooking = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
+  const { data: userInfo } = useUserInfoQuery(undefined, {
+    skip: !hasSessionHint,
+  });
+  const userRole = userInfo?.data?.data?.role;
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
+
+  const handleFindRides = () => {
+    if (userRole === role.user) {
+      navigate("/user/add-ride");
+      return;
+    }
+    navigate("/login");
+  };
 
   return (
     <>
@@ -108,6 +126,7 @@ const SearchBooking = () => {
 
               <div className="h-14 mt-6">
                 <Button
+                  onClick={handleFindRides}
                   className="h-14 w-full bg-linear-to-r from-blue-500 to-cyan-500 
     hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg 
     font-semibold group"

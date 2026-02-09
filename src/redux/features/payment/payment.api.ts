@@ -35,8 +35,21 @@ export const paymentApi = baseApi.injectEndpoints({
       }),
       providesTags: ["PAYMENT"],
     }),
+
+    getAllPayments: builder.query<any, void>({
+      query: () => ({
+        url: "/payment/all",
+        method: "GET",
+      }),
+      providesTags: ["PAYMENT"],
+    }),
   }),
 });
 
-export const { useInitPaymentMutation, useValidatePaymentMutation, useGetInvoiceQuery, useGetPaymentHistoryQuery } =
-  paymentApi;
+export const {
+  useInitPaymentMutation,
+  useValidatePaymentMutation,
+  useGetInvoiceQuery,
+  useGetPaymentHistoryQuery,
+  useGetAllPaymentsQuery,
+} = paymentApi;

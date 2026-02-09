@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Search, Lock, Unlock, Loader2, UserCog } from "lucide-react";
 import { toast } from "sonner";
+import { role } from "@/constants/role";
 
 export default function UserManagement() {
   const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
@@ -132,9 +133,10 @@ export default function UserManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Roles</SelectItem>
-                <SelectItem value="rider">Rider</SelectItem>
-                <SelectItem value="driver">Driver</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value={role.user}>User</SelectItem>
+                <SelectItem value={role.driver}>Driver</SelectItem>
+                <SelectItem value={role.admin}>Admin</SelectItem>
+                <SelectItem value={role.superAdmin}>Super Admin</SelectItem>
               </SelectContent>
             </Select>
 

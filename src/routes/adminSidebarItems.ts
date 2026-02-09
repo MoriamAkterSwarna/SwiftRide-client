@@ -8,9 +8,10 @@ import Profile from "@/pages/User/Profile";
 
 import type { ISidebarItem } from "@/types";
 import { lazy } from "react";
-import { Home, BarChart3, Users, Car, MapPin, UserCog } from "lucide-react";
+import { Home, BarChart3, Users, Car, MapPin, UserCog, CreditCard } from "lucide-react";
 
 const Analytics = lazy(() => import("@/pages/Admin/Analytics"));
+const Payments = lazy(() => import("@/pages/Admin/Payments"));
 
 export const adminSidebarItems: ISidebarItem[] = [
   {
@@ -32,6 +33,12 @@ export const adminSidebarItems: ISidebarItem[] = [
         url: "/admin/analytics",
         component: Analytics,
         icon: BarChart3,
+      },
+      {
+        title: "Payments",
+        url: "/admin/payments",
+        component: Payments,
+        icon: CreditCard,
       },
     ],
   },

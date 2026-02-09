@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "@/redux/store";
-import { useGetRideRequestsQuery, useUpdateRideStatusMutation, useAssignDriverMutation, rideApi } from "@/redux/features/ride/ride.api";
+import { useGetRideRequestsQuery, useUpdateRideStatusMutation, useAssignDriverMutation, rideApi, useGetRidesQuery } from "@/redux/features/ride/ride.api";
 import { useGetAllDriversQuery } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,16 +46,19 @@ export default function RideManagement() {
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const { data: ridesData, isLoading, refetch: refetchRides } = useGetRideRequestsQuery(
-    {
-      page,
-      limit,
-      search: searchTerm || undefined,
-      status: statusFilter === "ALL" ? undefined : statusFilter,
-      date: dateFilter || undefined,
-    },
-    { skip: !hasSessionHint }
-  );
+  const queryParams = {
+    page,
+    limit,
+    search: searchTerm || undefined,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+    date: dateFilter || undefined,
+  };
+
+
+
+  const { data: ridesData, isLoading, refetch: refetchRides } = useGetRidesQuery({})
+
+  console.log("📊 Rides data received:", ridesData);
 
   const { data: driversData, isLoading: driversLoading } = useGetAllDriversQuery(
     {
@@ -75,65 +78,12 @@ export default function RideManagement() {
   // Handle different driver data structures from API
   const drivers = driversData?.data?.drivers || driversData?.data || [];
 
-  // console.log("Full Rides Data:", ridesData);
-  // console.log("Rides array:", rides);
-  // console.log("First ride driver object:", rides[0]?.driver);
-  // Debug logging
-  if (rides.length > 0) {
-    console.log("=== RIDES UPDATED ===");
-    console.log("First ride full data:", rides[0]);
-    console.log("First ride driver:", rides[0].driver);
-    console.log("First ride driver type:", typeof rides[0].driver);
-    console.log("First ride driver structure:", JSON.stringify(rides[0].driver, null, 2));
-  }
-  console.log("Drivers list:", drivers);
-  console.log("Full API Response (ridesData):", ridesData);
-  console.log("Total rides from meta:", ridesData?.meta?.total);
-  console.log("=== END DEBUG ===");
-  // console.log("Drivers Processed:", drivers);
-  // console.log("Number of drivers:", drivers.length);
-
-  // Track modal state changes
-  useEffect(() => {
-    console.log("📱 Modal state changed:", {
-      isModalOpen,
-      selectedRideId: selectedRide?._id,
-      selectedDriver,
-    });
-  }, [isModalOpen, selectedRide?._id, selectedDriver]);
-
-  // Track rides data changes
-  useEffect(() => {
-    if (rides.length > 0) {
-      console.log("🔄 Rides data refreshed!");
-      console.log("  - Total rides:", rides.length);
-      console.log("  - First ride driver:", rides[0].driver);
-      
-      // If modal is open and ride was updated, check if driver changed
-      if (isModalOpen && selectedRide) {
-        const updatedRide = rides.find((r: any) => r._id === selectedRide._id);
-        if (updatedRide && updatedRide.driver !== selectedRide.driver) {
-          console.log("  ⚠️ IMPORTANT: Ride in table was updated!");
-          console.log("     Old driver:", selectedRide.driver);
-          console.log("     New driver:", updatedRide.driver);
-        }
-      }
-    }
-  }, [rides, isModalOpen, selectedRide]);
-
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setPage(1);
   };
 
   const openRideModal = (ride: any) => {
-    console.log("=== OPENING MODAL ===");
-    console.log("Ride object from table:", ride);
-    console.log("Ride ID:", ride._id);
-    console.log("Ride driver field:", ride.driver);
-    console.log("Ride driver type:", typeof ride.driver);
-    console.log("Ride full structure:", JSON.stringify(ride, null, 2));
-    
     setSelectedRide(ride);
     setSelectedStatus(ride.status?.toLowerCase() || "");
     
@@ -142,29 +92,15 @@ export default function RideManagement() {
     if (ride.driver) {
       if (typeof ride.driver === 'string') {
         driverId = ride.driver;
-        console.log("✓ Driver is string ID:", driverId);
       } else if (ride.driver?._id) {
         driverId = ride.driver._id;
-        console.log("✓ Driver is object with _id:", driverId);
-        console.log("  Full driver object:", JSON.stringify(ride.driver, null, 2));
       } else if (ride.driver?.user?._id) {
         driverId = ride.driver.user._id;
-        console.log("✓ Driver is object with user._id:", driverId);
-        console.log("  Full driver object:", JSON.stringify(ride.driver, null, 2));
       }
-    } else {
-      console.log("✗ No driver in ride object");
-    }
-    
-    console.log("Final selected driver ID to set:", driverId);
-    console.log("Drivers available from state:", drivers.length, "drivers");
-    if (drivers.length > 0) {
-      console.log("First driver in list:", JSON.stringify(drivers[0], null, 2));
     }
     
     setSelectedDriver(driverId);
     setIsModalOpen(true);
-    console.log("=== MODAL OPENED - isModalOpen set to true ===");
   };
 
   const handleStatusUpdate = async () => {
@@ -212,14 +148,23 @@ export default function RideManagement() {
       return;
     }
     try {
-      console.log("=== ASSIGNMENT START ===");
       const result = await assignDriver({ rideId: selectedRide._id, driverId: selectedDriver }).unwrap();
-      console.log("✓ Assignment API response:", result);
       
       // Extract the updated ride from response
-      const updatedRide = result?.data || result;
-      console.log("✓ Updated ride object:", JSON.stringify(updatedRide, null, 2));
-      console.log("✓ Driver in updated ride:", updatedRide.driver);
+      let updatedRide = result?.data || result;
+      
+      // Find the full driver info from drivers list to enrich the ride data
+      const selectedDriverObj = drivers.find((d: any) => d._id === selectedDriver || d.user?._id === selectedDriver);
+      
+      if (selectedDriverObj) {
+        // If driver object in response is just an ID, replace with full driver info
+        if (typeof updatedRide.driver === 'string' || !updatedRide.driver?.name) {
+          updatedRide = {
+            ...updatedRide,
+            driver: selectedDriverObj
+          };
+        }
+      }
       
       // Extract driver ID
       let assignedDriverId = selectedDriver;
@@ -230,41 +175,22 @@ export default function RideManagement() {
       } else if (updatedRide.driver?.user?._id) {
         assignedDriverId = updatedRide.driver.user._id;
       }
-      console.log("✓ Extracted driver ID:", assignedDriverId);
       
-      // Update local state immediately
+      // Update local state immediately with enriched driver info
       setSelectedRide(updatedRide);
       setSelectedDriver(assignedDriverId);
       
       toast.success("Driver assigned successfully");
       
-      // Build complete query args with NO undefined values
-      const cleanQueryArgs: any = {
-        page,
-        limit,
-      };
-      if (searchTerm) cleanQueryArgs.search = searchTerm;
-      if (statusFilter && statusFilter !== "ALL") cleanQueryArgs.status = statusFilter;
-      if (dateFilter) cleanQueryArgs.date = dateFilter;
-      
-      console.log("✓ Clean query args:", cleanQueryArgs);
-      
       // Invalidate the cache to force refetch
       dispatch(rideApi.util.invalidateTags(["RIDE"]));
-      console.log("✓ Cache invalidated");
-      
-      // Refetch with exact same parameters
-      console.log("✓ Refetching with params:", cleanQueryArgs);
-      const refetchResult = await refetchRides();
-      console.log("✓ Refetch completed:", refetchResult);
+      await refetchRides();
       
       // Close modal after successful update
       setTimeout(() => {
         setIsModalOpen(false);
-        console.log("=== ASSIGNMENT COMPLETE ===");
       }, 1000);
     } catch (error: any) {
-      console.error("❌ Assignment error:", error);
       toast.error(error?.data?.message || "Failed to assign driver");
     }
   };
@@ -387,26 +313,34 @@ export default function RideManagement() {
                       <TableCell>
                         <div className="flex items-center">
                           <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {ride.rider?.name || "Unknown"}
+                          {ride.user?.name || "Unknown"}
                         </div>
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          console.log("Rendering driver for ride:", ride._id, "driver:", ride.driver);
+                          // Check if driver exists and is not null/undefined
                           if (!ride.driver) return "Not Assigned";
                           
-                          // driver now directly references User after schema fix
+                          let driverName = null;
+                          
+                          // If driver is an object, try to get name
                           if (typeof ride.driver === 'object') {
-                            const driverName = ride.driver?.name;
-                            console.log("Driver is User object, name:", driverName);
-                            return driverName || "Not Assigned";
+                            driverName = ride.driver?.name || ride.driver?.user?.name;
+                            // Only return if we actually found a name
+                            if (driverName && driverName.trim() !== '') {
+                              return driverName;
+                            }
                           }
                           
                           // If driver is just an ID string, try to find in drivers list
-                          if (typeof ride.driver === 'string') {
-                            const driverInfo = drivers.find((d: any) => d._id === ride.driver);
-                            console.log("Driver is string ID, found driver info:", driverInfo);
-                            return driverInfo?.name || driverInfo?.user?.name || "Not Assigned";
+                          if (typeof ride.driver === 'string' && ride.driver.trim() !== '') {
+                            const driverInfo = drivers.find((d: any) => d._id === ride.driver || d.user?._id === ride.driver);
+                            if (driverInfo) {
+                              driverName = driverInfo?.name || driverInfo?.user?.name;
+                              if (driverName && driverName.trim() !== '') {
+                                return driverName;
+                              }
+                            }
                           }
                           
                           return "Not Assigned";
@@ -416,7 +350,7 @@ export default function RideManagement() {
                         <div className="flex items-start">
                           <MapPin className="h-4 w-4 mr-2 text-muted-foreground shrink-0 mt-0.5" />
                           <span className="truncate">
-                            {ride.pickupLocation?.address ||
+                            {ride?.pickUpLocation?.address ||
                               ride.from?.name ||
                               "N/A"}
                           </span>
@@ -426,7 +360,7 @@ export default function RideManagement() {
                         <div className="flex items-start">
                           <MapPin className="h-4 w-4 mr-2 text-muted-foreground shrink-0 mt-0.5" />
                           <span className="truncate">
-                            {ride.dropoffLocation?.address ||
+                            {ride?.dropOffLocation?.address ||
                               ride.to?.name ||
                               "N/A"}
                           </span>
@@ -505,127 +439,173 @@ export default function RideManagement() {
 
       {/* Ride Details Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-3xl rounded-3xl border-slate-200">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-slate-800">Ride Details</DialogTitle>
-            <DialogDescription className="text-slate-600">
+        <DialogContent className="max-w-sm md:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-3xl border-slate-200 p-4 md:p-6">
+          <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-slate-100 mb-4">
+            <DialogTitle className="text-lg md:text-2xl font-bold text-slate-800">Ride Details</DialogTitle>
+            <DialogDescription className="text-xs md:text-sm text-slate-600">
               Complete information about the ride
             </DialogDescription>
           </DialogHeader>
 
           {selectedRide && (
-            <div className="space-y-6">
+            <div className="space-y-6 px-2">
               {/* Rider & Driver Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 border border-blue-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 md:p-5 border border-blue-100">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
                       <User className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-slate-800">Rider Information</h3>
+                    <h3 className="font-semibold text-slate-800 text-sm md:text-base">Rider Info</h3>
                   </div>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-2 text-xs md:text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-600">Name:</span>
-                      <span className="font-medium text-slate-800">{selectedRide.rider?.name || "N/A"}</span>
+                      <span className="font-medium text-slate-800 text-right">{selectedRide.user?.name || selectedRide.rider?.name || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Email:</span>
-                      <span className="font-medium text-slate-800">{selectedRide.rider?.email || "N/A"}</span>
+                      <span className="font-medium text-slate-800 text-right truncate">{selectedRide.user?.email || selectedRide.rider?.email || "N/A"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Phone:</span>
-                      <span className="font-medium text-slate-800">{selectedRide.rider?.phone || "N/A"}</span>
+                      <span className="font-medium text-slate-800">{selectedRide.user?.phone || selectedRide.rider?.phone || "N/A"}</span>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 md:p-5 border border-emerald-100">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
                       <Car className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-slate-800">Driver Information</h3>
+                    <h3 className="font-semibold text-slate-800 text-sm md:text-base">Driver Info</h3>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">
-                        Name:
-                      </span>{" "}
-                      {(() => {
-                        // driver now directly references User
-                        const driverName = selectedRide.driver?.name;
-                        if (driverName) return driverName;
-                        
-                        // If not in selectedRide, check the drivers list using selectedDriver ID
-                        if (selectedDriver && drivers.length > 0) {
-                          const driver = drivers.find((d: any) => d._id === selectedDriver);
-                          return driver?.name || driver?.user?.name || "Not Assigned";
-                        }
-                        return "Not Assigned";
-                      })()}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">
-                        Email:
-                      </span>{" "}
-                      {(() => {
-                        const driverEmail = selectedRide.driver?.email;
-                        if (driverEmail) return driverEmail;
-                        
-                        if (selectedDriver && drivers.length > 0) {
-                          const driver = drivers.find((d: any) => d._id === selectedDriver);
-                          return driver?.email || driver?.user?.email || "N/A";
-                        }
-                        return "N/A";
-                      })()}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">
-                        Phone:
-                      </span>{" "}
-                      {(() => {
-                        const driverPhone = selectedRide.driver?.phone;
-                        if (driverPhone) return driverPhone;
-                        
-                        if (selectedDriver && drivers.length > 0) {
-                          const driver = drivers.find((d: any) => d._id === selectedDriver);
-                          return driver?.phone || driver?.user?.phone || "N/A";
-                        }
-                        return "N/A";
-                      })()}
-                    </p>
-                    <p>
-                      <span className="text-muted-foreground">
-                        Rating:
-                      </span>{" "}
-                      {selectedRide.driver?.rating || "N/A"}
-                    </p>
+                  <div className="space-y-2 text-xs md:text-sm">
+                    {(() => {
+                      // Check if driver exists and has valid data
+                      if (!selectedRide.driver) {
+                        return (
+                          <>
+                            <p>
+                              <span className="text-muted-foreground">Name:</span>{" "}
+                              <span className="font-medium text-slate-800">Not Assigned</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Email:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Phone:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Rating:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                          </>
+                        );
+                      }
+                      
+                      // Get driver info
+                      let driverInfo = null;
+                      
+                      // If driver is an object with data
+                      if (typeof selectedRide.driver === 'object') {
+                        driverInfo = selectedRide.driver;
+                      }
+                      
+                      // If driver is just an ID string, find from drivers list
+                      if (typeof selectedRide.driver === 'string' && selectedRide.driver.trim() !== '') {
+                        driverInfo = drivers.find((d: any) => d._id === selectedRide.driver || d.user?._id === selectedRide.driver);
+                      }
+                      
+                      // Check if we have valid driver info with name
+                      const driverName = driverInfo?.name || driverInfo?.user?.name;
+                      
+                      // If no valid driver name found, show Not Assigned
+                      if (!driverName || driverName.trim() === '') {
+                        return (
+                          <>
+                            <p>
+                              <span className="text-muted-foreground">Name:</span>{" "}
+                              <span className="font-medium text-slate-800">Not Assigned</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Email:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Phone:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">Rating:</span>{" "}
+                              <span className="font-medium text-slate-800">N/A</span>
+                            </p>
+                          </>
+                        );
+                      }
+                      
+                      // Extract driver details
+                      const driverEmail = driverInfo?.email || driverInfo?.user?.email;
+                      const driverPhone = driverInfo?.phone || driverInfo?.user?.phone;
+                      const driverRating = driverInfo?.rating;
+                      
+                      return (
+                        <>
+                          <p>
+                            <span className="text-muted-foreground">Name:</span>{" "}
+                            <span className="font-medium text-slate-800">
+                              {driverName || "Not Assigned"}
+                            </span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Email:</span>{" "}
+                            <span className="font-medium text-slate-800 break-all">
+                              {driverEmail || "N/A"}
+                            </span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Phone:</span>{" "}
+                            <span className="font-medium text-slate-800">
+                              {driverPhone || "N/A"}
+                            </span>
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Rating:</span>{" "}
+                            <span className="font-medium text-slate-800">
+                              {driverRating ? `${driverRating} ⭐` : "N/A"}
+                            </span>
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
 
               {/* Location Info */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 md:p-5 border border-purple-100">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-slate-800">Route Information</h3>
+                  <MapPin className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                  <h3 className="font-semibold text-slate-800 text-sm md:text-base">Route Information</h3>
                 </div>
-                <div className="space-y-3 text-sm">
+                <div className="space-y-3 text-xs md:text-sm">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">A</div>
-                    <div>
+                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">A</div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-600 mb-1">Pickup Location</p>
-                      <p className="font-medium text-slate-800">
-                        {selectedRide.pickupLocation?.address || selectedRide.from?.name || "N/A"}
+                      <p className="font-medium text-slate-800 break-words">
+                        {selectedRide.pickUpLocation?.address || selectedRide.pickupLocation?.address || selectedRide.from?.name || "N/A"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
-                    <div>
+                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">B</div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-600 mb-1">Dropoff Location</p>
-                      <p className="font-medium text-slate-800">
-                        {selectedRide.dropoffLocation?.address || selectedRide.to?.name || "N/A"}
+                      <p className="font-medium text-slate-800 break-words">
+                        {selectedRide.dropOffLocation?.address || selectedRide.dropoffLocation?.address || selectedRide.to?.name || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -633,22 +613,22 @@ export default function RideManagement() {
               </div>
 
               {/* Ride Details */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-xl p-4 border border-slate-200">
                   <p className="text-xs text-slate-500 mb-1">Fare Amount</p>
-                  <p className="text-2xl font-bold text-emerald-600">
-                    ${selectedRide.fare || selectedRide.price}
+                  <p className="text-xl md:text-2xl font-bold text-emerald-600">
+                    ${selectedRide.fare || selectedRide.cost}
                   </p>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-slate-200">
                   <p className="text-xs text-slate-500 mb-1">Status</p>
-                  <p className="text-lg font-semibold text-slate-800 capitalize">
+                  <p className="text-base md:text-lg font-semibold text-slate-800 capitalize">
                     {selectedRide.status?.replace(/_/g, ' ')}
                   </p>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-slate-200">
                   <p className="text-xs text-slate-500 mb-1">Date</p>
-                  <p className="text-lg font-semibold text-slate-800">
+                  <p className="text-base md:text-lg font-semibold text-slate-800">
                     {new Date(selectedRide.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -656,9 +636,9 @@ export default function RideManagement() {
 
               {/* Status Update Section */}
               <div className="space-y-4 border-t border-slate-200 pt-6">
-                <h3 className="font-semibold text-slate-800 text-lg">Manage Ride</h3>
+                <h3 className="font-semibold text-slate-800 text-sm md:text-base">Manage Ride</h3>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-slate-700">
                       Update Status

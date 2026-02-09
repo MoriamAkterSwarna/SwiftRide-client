@@ -67,10 +67,9 @@ export const rideApi = baseApi.injectEndpoints({
     }),
 
     getRides: builder.query<IOtpResponse<IRide[]>, Record<string, any>>({
-      query: (params: any) => ({
-        url: "/ride-request/request",
+      query: () => ({
+        url: "/ride",
         method: "GET",
-        params: params,
       }),
       providesTags: ["RIDE"],
     }),
@@ -194,6 +193,47 @@ export const rideApi = baseApi.injectEndpoints({
       providesTags: ["RIDE"],
     }),
 
+    getRideStats: builder.query({
+      query: () => ({
+        url: "/stats/ride",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getPaymentStats: builder.query({
+      query: () => ({
+        url: "/stats/payment",
+        method: "GET",
+      }),
+      providesTags: ["PAYMENT"],
+    }),
+
+    getDriverStats: builder.query({
+      query: () => ({
+        url: "/stats/driver",
+        method: "GET",
+      }),
+      providesTags: ["DRIVER"],
+    }),
+
+    getRideRequestStats: builder.query({
+      query: () => ({
+        url: "/stats/ride-request",
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getRevenueAnalytics: builder.query({
+      query: ({ period }: { period?: "daily" | "weekly" | "monthly" }) => ({
+        url: "/stats/revenue",
+        method: "GET",
+        params: period ? { period } : undefined,
+      }),
+      providesTags: ["PAYMENT"],
+    }),
+
     getRideRequests: builder.query({
       query: (params?: any) => {
         console.log("Fetching rides with params:", params);
@@ -271,7 +311,7 @@ export const rideApi = baseApi.injectEndpoints({
 
     getAvailableRides: builder.query({
       query: () => ({
-        url: '/ride/available',
+        url: "/ride/available-rides",
         method: 'GET',
       }),
       providesTags: ["RIDE", "AVAILABLE_RIDES"],
@@ -297,6 +337,11 @@ export const {
   useGetRideHistoryQuery,
   useGetDriverRideHistoryQuery,
   useGetRideAnalyticsQuery,
+  useGetRideStatsQuery,
+  useGetPaymentStatsQuery,
+  useGetDriverStatsQuery,
+  useGetRideRequestStatsQuery,
+  useGetRevenueAnalyticsQuery,
   useGetRideRequestsQuery,
   useGetOngoingRidesQuery,
   useGetUserRideQuery,
