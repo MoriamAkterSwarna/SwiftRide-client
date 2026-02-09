@@ -180,23 +180,47 @@ export default function MyRideDetails() {
   const handlePayment = async () => {
     try {
       console.log("🚀 Starting payment process for ride:", ride);
+      console.log("🔍 Full ride object:", JSON.stringify(ride, null, 2));
 
-      if (!ride._id && !ride.id) {
-        toast.error("Invalid ride ID");
+      // Extract ride ID - try multiple sources
+      let rideId = ride._id || ride.id || id;
+      
+      // Convert to string if it's an object
+      if (typeof rideId === 'object' && rideId !== null) {
+        rideId = rideId.toString();
+      }
+      
+      // Validate ride ID
+      if (!rideId || rideId === 'undefined' || rideId === 'null') {
+        console.error("❌ Invalid ride ID detected");
+        toast.error("Invalid ride ID. Please go back and try again.");
         return;
       }
 
-      const rideId = ride._id || ride.id || "";
+      // Validate MongoDB ObjectId format (24 hex characters)
+      const objectIdPattern = /^[0-9a-fA-F]{24}$/;
+      if (!objectIdPattern.test(rideId)) {
+        console.error("❌ Ride ID is not a valid MongoDB ObjectId:", rideId);
+        toast.error("Invalid ride ID format. Please refresh and try again.");
+        return;
+      }
+
       console.log("📍 Using ride ID:", rideId);
+      console.log("📍 Ride ID type:", typeof rideId);
+      console.log("📍 Ride ID length:", rideId.length);
+      console.log("✅ Ride ID is valid MongoDB ObjectId");
 
       // Show loading toast
       const loadingToast = toast.loading("Initializing payment...");
 
       try {
+        console.log("📤 Calling initPayment API with rideId:", rideId);
         const response = await initPayment(rideId).unwrap();
         toast.dismiss(loadingToast);
 
         console.log("📦 Payment response received:", response);
+        console.log("📦 Response type:", typeof response);
+        console.log("📦 Response keys:", Object.keys(response || {}));
 
         // Comprehensive URL extraction
         const possibleUrls = [
@@ -215,7 +239,7 @@ export default function MyRideDetails() {
 
         console.log("🔍 Checking possible URLs:", possibleUrls);
 
-        let paymentUrl = possibleUrls.find(url => url && typeof url === 'string' && url.trim() !== '');
+        const paymentUrl = possibleUrls.find(url => url && typeof url === 'string' && url.trim() !== '');
 
         if (paymentUrl) {
           console.log("✅ Payment URL found:", paymentUrl);
@@ -254,24 +278,63 @@ export default function MyRideDetails() {
             toast.error("Payment URL not found. Please try again or contact support.");
           }
         }
-      } catch (apiError) {
+      } catch (apiError: any) {
         toast.dismiss(loadingToast);
         console.error("❌ API call failed:", apiError);
+        console.error("❌ Full error object:", JSON.stringify(apiError, null, 2));
+        console.error("❌ Error data:", apiError?.data);
+        console.error("❌ Error response:", apiError?.response);
 
-        // Handle different error types
-        if (apiError?.status === 404) {
-          toast.error("Payment service not found. Please contact support.");
-        } else if (apiError?.status === 500) {
-          toast.error("Payment service error. Please try again later.");
-        } else if (apiError?.data?.message) {
-          toast.error(apiError.data.message);
+        // Extract all possible error messages
+        const status = apiError?.status || apiError?.originalStatus || apiError?.response?.status;
+        const errorData = apiError?.data || apiError?.response?.data || {};
+        
+        const errorMessage = 
+          errorData?.message || 
+          errorData?.error ||
+          errorData?.errorSources?.[0]?.message ||
+          apiError?.message ||
+          apiError?.error;
+
+        console.log("📊 Extracted error details:", { 
+          status, 
+          errorMessage, 
+          errorData,
+          allKeys: Object.keys(apiError || {})
+        });
+
+        // Show detailed error in console for debugging
+        if (errorData?.errorSources && Array.isArray(errorData.errorSources)) {
+          console.error("📋 Error sources:", errorData.errorSources);
+        }
+
+        // Handle specific status codes with better messages
+        if (status === 400) {
+          const detailedMessage = errorMessage || "Invalid request. Please check your ride details.";
+          toast.error(detailedMessage);
+          console.error("💡 Suggestion: Check if ride exists, has valid user, and all required fields are present");
+        } else if (status === 401) {
+          toast.error("Authentication required. Please login again.");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        } else if (status === 404) {
+          toast.error(errorMessage || "Ride not found. Please go back and try again.");
+        } else if (status === 406) {
+          toast.error(errorMessage || "Payment request not acceptable. Please verify your ride information.");
+        } else if (status === 500) {
+          toast.error(errorMessage || "Server error. Please try again later.");
+          console.error("💡 This is a backend error. Check server logs.");
+        } else if (errorMessage) {
+          toast.error(errorMessage);
         } else {
-          toast.error("Payment initialization failed. Please try again.");
+          toast.error("Payment initialization failed. Please check console for details.");
         }
       }
     } catch (error: any) {
       console.error("❌ Unexpected error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      console.error("❌ Error stack:", error?.stack);
+      toast.error("An unexpected error occurred. Please check console and try again.");
     }
   };
 

@@ -15,6 +15,7 @@ import Settings from "@/pages/Settings";
 import Helpline from "@/pages/Helpline";
 import MyRideDetails from "@/pages/User/MyRideDetails";
 import PaymentHistory from "@/pages/User/PaymentHistory";
+import PaymentResult from "@/pages/PaymentResult";
 
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
@@ -103,6 +104,18 @@ export const router = createBrowserRouter([
   {
     Component: GoogleCallback,
     path: "/auth/google/callback",
+  },
+  {
+    Component: PaymentResult,
+    path: "/payment/success",
+  },
+  {
+    Component: PaymentResult,
+    path: "/payment/fail",
+  },
+  {
+    Component: PaymentResult,
+    path: "/payment/cancel",
   },
   // {
   //   Component: Unauthorized,
