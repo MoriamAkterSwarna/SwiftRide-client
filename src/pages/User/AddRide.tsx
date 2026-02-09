@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { MapPin, Clock, CreditCard, Upload, Users, Calendar, DollarSign, Car } from "lucide-react";
+import { MapPin, Clock, Upload, Users, Calendar, DollarSign, Car } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCreateRideMutation, useEstimateFareMutation, useGetRideTypesQuery } from "@/redux/features/ride/ride.api";
 import { useGetDivisionsQuery } from "@/redux/features/division/division.api";
@@ -15,7 +14,7 @@ import {
   type LocationPoint,
 } from "@/redux/features/location/locationSlice";
 import LocationPickerMap from "@/components/modules/maps/LocationPickerMap";
-import MultipleRideRequests from "@/components/modules/rides/MultipleRideRequests";
+
 import { useUserInfoQuery } from "@/redux/features/auth/auth.api";
 
 export default function AddRide() {
@@ -48,6 +47,7 @@ export default function AddRide() {
   const [estimateData, setEstimateData] = useState<any>(null);
   const [showActiveRides, setShowActiveRides] = useState(false);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]); // Store actual file objects
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   const [createRide, { isLoading }] = useCreateRideMutation();
@@ -59,7 +59,7 @@ export default function AddRide() {
   const { data: rideTypesData } = useGetRideTypesQuery();
   const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
   const { data: userData } = useUserInfoQuery(undefined, { skip: !hasSessionHint });
-  
+
   const dispatch = useAppDispatch();
   const { pickup, dropoff, activeTarget } = useAppSelector((state) => state.location);
 
@@ -67,7 +67,7 @@ export default function AddRide() {
     "WiFi", "AC", "Music", "Water", "Snacks", "Phone Charger", "Pet Friendly", "Luggage Space"
   ];
 
-  const vehicleTypes = ["Car", "Bike", "SUV", "Van", "Luxury"];
+  const vehicleTypes = ["Bike", "Car"];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -111,8 +111,21 @@ export default function AddRide() {
     if (!files) return;
 
     const fileArray = Array.from(files);
-    const readers: Promise<string>[] = [];
 
+    // Validate file size (5MB max per file)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    const invalidFiles = fileArray.filter(file => file.size > maxSize);
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Some files exceed 5MB limit: ${invalidFiles.map(f => f.name).join(', ')}`);
+      return;
+    }
+
+    // Store actual file objects for upload
+    setImageFiles(prev => [...prev, ...fileArray]);
+
+    // Create preview URLs
+    const readers: Promise<string>[] = [];
     fileArray.forEach(file => {
       const reader = new FileReader();
       readers.push(
@@ -125,10 +138,7 @@ export default function AddRide() {
 
     Promise.all(readers).then(results => {
       setImagePreview(prev => [...prev, ...results]);
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...results]
-      }));
+      toast.success(`${fileArray.length} image(s) added`);
     });
   };
 
@@ -137,12 +147,12 @@ export default function AddRide() {
       const updated = prev.includes(amenity)
         ? prev.filter(a => a !== amenity)
         : [...prev, amenity];
-      
+
       setFormData(prevForm => ({
         ...prevForm,
         amenities: updated
       }));
-      
+
       return updated;
     });
   };
@@ -210,10 +220,10 @@ export default function AddRide() {
         return;
       }
 
-      const ridePayload = {
+      // Build payload with only defined values
+      const rideData: any = {
         user: userId,
         title: formData.title,
-        description: formData.description,
         pickUpLocation: {
           address: pickup.address,
           coordinates: {
@@ -228,21 +238,49 @@ export default function AddRide() {
             longitude: Number(dropoff.longitude),
           }
         },
-        pickUpTime: formData.pickUpTime ? new Date(formData.pickUpTime).toISOString() : undefined,
-        dropOffTime: formData.dropOffTime ? new Date(formData.dropOffTime).toISOString() : undefined,
-        cost: Number(formData.cost || estimateData?.data?.totalFare || 0),
-        amenities: formData.amenities,
-        maxGuests: formData.maxGuests ? Number(formData.maxGuests) : undefined,
-        minAge: formData.minAge ? Number(formData.minAge) : undefined,
         division: formData.division,
         district: formData.district,
         rideType: formData.rideType,
-        availableSeats: formData.availableSeats ? Number(formData.availableSeats) : undefined,
-        vehicle: formData.vehicle,
-        images: formData.images,
       };
 
-      const result = await createRide(ridePayload as any).unwrap();
+      // Add optional fields only if they have values
+      if (formData.description) rideData.description = formData.description;
+      if (formData.pickUpTime) rideData.pickUpTime = new Date(formData.pickUpTime).toISOString();
+      if (formData.dropOffTime) rideData.dropOffTime = new Date(formData.dropOffTime).toISOString();
+      if (formData.cost) rideData.cost = Number(formData.cost);
+      else if (estimateData?.data?.totalFare) rideData.cost = Number(estimateData.data.totalFare);
+
+      if (formData.amenities && formData.amenities.length > 0) rideData.amenities = formData.amenities;
+      if (formData.maxGuests) rideData.maxGuests = Number(formData.maxGuests);
+      if (formData.minAge) rideData.minAge = Number(formData.minAge);
+      if (formData.availableSeats) rideData.availableSeats = Number(formData.availableSeats);
+      if (formData.vehicle && (formData.vehicle === "Bike" || formData.vehicle === "Car")) {
+        rideData.vehicle = formData.vehicle;
+      }
+
+      // Create FormData if images exist, otherwise send JSON
+      let payload: any;
+      if (imageFiles.length > 0) {
+        const formDataPayload = new FormData();
+
+        // Append all images with 'files' key to match backend multer config
+        imageFiles.forEach((file) => {
+          formDataPayload.append('files', file);
+        });
+
+        // Append other data as JSON string in 'data' field
+        formDataPayload.append('data', JSON.stringify(rideData));
+
+        payload = formDataPayload;
+        console.log("Sending with images (FormData)", imageFiles.length, "files");
+      } else {
+        payload = rideData;
+        console.log("Sending without images (JSON)");
+      }
+
+      console.log("Ride Payload:", payload); // Debug log
+
+      await createRide(payload).unwrap();
       toast.success("Ride created successfully!");
 
       // Reset form
@@ -266,12 +304,21 @@ export default function AddRide() {
       });
       setSelectedAmenities([]);
       setImagePreview([]);
+      setImageFiles([]);
       dispatch(clearLocations());
       setShowEstimate(false);
       setEstimateData(null);
     } catch (error: any) {
+      console.error("Failed to create ride:", error);
       const errorMessage = error?.data?.message || error?.message || "Failed to create ride";
-      toast.error(errorMessage);
+
+      // Show detailed validation errors if available
+      if (error?.data?.errorSources && Array.isArray(error.data.errorSources)) {
+        const validationErrors = error.data.errorSources.map((err: any) => err.message).join(", ");
+        toast.error(`Validation Error: ${validationErrors}`);
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -280,11 +327,11 @@ export default function AddRide() {
   const rideTypes = rideTypesData?.data || [];
   const filteredDistricts = formData.division
     ? districts.filter((district: any) => {
-        const divisionValue = district.division;
-        return typeof divisionValue === "string"
-          ? divisionValue === formData.division
-          : divisionValue?._id === formData.division;
-      })
+      const divisionValue = district.division;
+      return typeof divisionValue === "string"
+        ? divisionValue === formData.division
+        : divisionValue?._id === formData.division;
+    })
     : [];
 
   return (
@@ -296,22 +343,20 @@ export default function AddRide() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowActiveRides(false)}
-              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
-                !showActiveRides
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-              }`}
+              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${!showActiveRides
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                }`}
             >
               <Car className="inline mr-2" size={18} />
               Create Ride
             </button>
             <button
               onClick={() => setShowActiveRides(true)}
-              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
-                showActiveRides
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-              }`}
+              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${showActiveRides
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                }`}
             >
               <Clock className="inline mr-2" size={18} />
               My Rides
@@ -321,9 +366,7 @@ export default function AddRide() {
       </div>
 
       {/* Show Active Rides or Create Form */}
-      {showActiveRides ? (
-        <MultipleRideRequests />
-      ) : (
+      {!showActiveRides && (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Ride</h2>
 
@@ -331,7 +374,7 @@ export default function AddRide() {
             {/* Basic Information */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
@@ -378,11 +421,10 @@ export default function AddRide() {
                     <button
                       type="button"
                       onClick={() => dispatch(setActiveTarget("pickup"))}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                        activeTarget === "pickup"
-                          ? "bg-blue-600 text-white shadow-md"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:ring-blue-400"
-                      }`}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${activeTarget === "pickup"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:ring-blue-400"
+                        }`}
                     >
                       <MapPin className="inline mr-1" size={16} />
                       Pickup
@@ -390,11 +432,10 @@ export default function AddRide() {
                     <button
                       type="button"
                       onClick={() => dispatch(setActiveTarget("dropoff"))}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                        activeTarget === "dropoff"
-                          ? "bg-blue-600 text-white shadow-md"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:ring-blue-400"
-                      }`}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${activeTarget === "dropoff"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 ring-1 ring-gray-300 dark:ring-gray-600 hover:ring-blue-400"
+                        }`}
                     >
                       <MapPin className="inline mr-1" size={16} />
                       Dropoff
@@ -564,7 +605,7 @@ export default function AddRide() {
 
                 <div>
                   <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                    Vehicle Type
+                    Vehicle Type <span className="text-xs text-gray-500">(Optional - Bike or Car only)</span>
                   </label>
                   <select
                     name="vehicle"
@@ -635,11 +676,10 @@ export default function AddRide() {
                     key={amenity}
                     type="button"
                     onClick={() => toggleAmenity(amenity)}
-                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                      selectedAmenities.includes(amenity)
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${selectedAmenities.includes(amenity)
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
                   >
                     {amenity}
                   </button>
@@ -649,7 +689,13 @@ export default function AddRide() {
 
             {/* Images */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Images</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                Images {imageFiles.length > 0 && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                    ({imageFiles.length} file{imageFiles.length > 1 ? 's' : ''} selected)
+                  </span>
+                )}
+              </h3>
               <div>
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition bg-white dark:bg-gray-800">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -680,10 +726,7 @@ export default function AddRide() {
                         type="button"
                         onClick={() => {
                           setImagePreview(prev => prev.filter((_, i) => i !== idx));
-                          setFormData(prev => ({
-                            ...prev,
-                            images: prev.images.filter((_, i) => i !== idx)
-                          }));
+                          setImageFiles(prev => prev.filter((_, i) => i !== idx));
                         }}
                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
                       >
@@ -739,6 +782,27 @@ export default function AddRide() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Show My Rides Section */}
+      {showActiveRides && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Rides</h2>
+
+          <div className="text-center py-12">
+            <Car className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">My Rides Section</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Your created rides will appear here
+            </p>
+            <button
+              onClick={() => setShowActiveRides(false)}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Create New Ride
+            </button>
+          </div>
         </div>
       )}
     </div>

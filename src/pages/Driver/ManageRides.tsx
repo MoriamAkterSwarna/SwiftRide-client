@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useAcceptRideRequestMutation, useRejectRideRequestMutation, useGetAvailableRidesQuery } from "@/redux/features/ride/ride.api";
+import { useGetDriverProfileQuery, useToggleDriverAvailabilityMutation } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +19,14 @@ import { toast } from "sonner";
 export default function ManageRides() {
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [selectedRideRequest, setSelectedRideRequest] = useState<any>(null);
-  const { data, isLoading, refetch } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
+  const { data, isLoading } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
   const [acceptRide, { isLoading: acceptLoading }] = useAcceptRideRequestMutation();
   const [rejectRide, { isLoading: rejectLoading }] = useRejectRideRequestMutation();
+  const { data: driverProfileData } = useGetDriverProfileQuery(undefined, { skip: !hasSessionHint });
+  const [toggleAvailability, { isLoading: toggleLoading }] = useToggleDriverAvailabilityMutation();
+
+  const driverProfile = driverProfileData?.data;
+  const isOnline = Boolean(driverProfile?.isOnline);
 
   const rideRequests = Array.isArray(data?.data)
     ? data.data
@@ -32,10 +38,10 @@ export default function ManageRides() {
     try {
       await acceptRide({ id: rideId }).unwrap();
       toast.success("Ride accepted successfully!");
-      refetch();
       setSelectedRideRequest(null);
     } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to accept ride");
+      const message = error?.data?.message || "Failed to accept ride";
+      toast.error(message);
     }
   };
 
@@ -43,10 +49,18 @@ export default function ManageRides() {
     try {
       await rejectRide({ id: rideId }).unwrap();
       toast.success("Ride rejected successfully!");
-      refetch();
       setSelectedRideRequest(null);
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to reject ride");
+    }
+  };
+
+  const handleToggleAvailability = async () => {
+    try {
+      await toggleAvailability().unwrap();
+      toast.success(isOnline ? "You are now offline" : "You are now online");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update availability");
     }
   };
 
@@ -60,11 +74,29 @@ export default function ManageRides() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Manage Ride Requests</h1>
-        <p className="text-muted-foreground mt-2">
-          View and respond to incoming ride requests
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Manage Ride Requests</h1>
+          <p className="text-muted-foreground mt-2">
+            View and respond to incoming ride requests
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+              isOnline ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            {isOnline ? "Online" : "Offline"}
+          </span>
+          <Button
+            onClick={handleToggleAvailability}
+            disabled={toggleLoading}
+            className={isOnline ? "bg-gray-900 hover:bg-gray-800" : "bg-green-600 hover:bg-green-700"}
+          >
+            {toggleLoading ? "Updating..." : isOnline ? "Go Offline" : "Go Online"}
+          </Button>
+        </div>
       </div>
 
       {rideRequests?.length === 0 ? (
@@ -78,20 +110,36 @@ export default function ManageRides() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {rideRequests?.map((request: any) => (
+          {rideRequests?.map((request: any) => {
+            const pickup = request.pickupLocation || request.pickUpLocation;
+            const dropoff = request.dropoffLocation || request.dropOffLocation;
+            const riderName = request.rider?.name || request.user?.name || "Unknown Rider";
+            const riderPhone = request.rider?.phone || request.user?.phone || "No phone";
+            const requestedAt = request.requestedAt || request.createdAt;
+            const fareValue = request.fare || request.cost || request.price || "N/A";
+            const statusValue = (request.status || "Active").toString();
+            const normalizedStatus = statusValue.toLowerCase();
+            const statusClasses =
+              normalizedStatus === "accepted"
+                ? "bg-green-100 text-green-800"
+                : normalizedStatus === "cancelled"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-yellow-100 text-yellow-800";
+
+            return (
             <Card key={request._id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg">
-                      {request.rider?.name || "Unknown Rider"}
+                      {riderName}
                     </CardTitle>
                     <CardDescription>
-                      {request.rider?.phone || "No phone"}
+                      {riderPhone}
                     </CardDescription>
                   </div>
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Pending
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClasses}`}>
+                    {statusValue}
                   </span>
                 </div>
               </CardHeader>
@@ -102,7 +150,7 @@ export default function ManageRides() {
                   <div>
                     <p className="text-sm text-muted-foreground">Pickup</p>
                     <p className="font-medium">
-                      {request.pickupLocation?.address || "N/A"}
+                      {pickup?.address || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -113,7 +161,7 @@ export default function ManageRides() {
                   <div>
                     <p className="text-sm text-muted-foreground">Dropoff</p>
                     <p className="font-medium">
-                      {request.dropoffLocation?.address || "N/A"}
+                      {dropoff?.address || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -123,7 +171,7 @@ export default function ManageRides() {
                   <DollarSign className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="text-sm text-muted-foreground">Fare</p>
-                    <p className="font-medium">${request.fare || request.price || "N/A"}</p>
+                    <p className="font-medium">${fareValue}</p>
                   </div>
                 </div>
 
@@ -133,18 +181,18 @@ export default function ManageRides() {
                   <div>
                     <p className="text-sm text-muted-foreground">Requested</p>
                     <p className="font-medium">
-                      {new Date(request.requestedAt).toLocaleTimeString()}
+                      {requestedAt ? new Date(requestedAt).toLocaleTimeString() : "N/A"}
                     </p>
                   </div>
                 </div>
 
                 {/* Rider Phone */}
-                {request.rider?.phone && (
+                {riderPhone && riderPhone !== "No phone" && (
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-purple-600" />
                     <div>
                       <p className="text-sm text-muted-foreground">Contact</p>
-                      <p className="font-medium">{request.rider.phone}</p>
+                      <p className="font-medium">{riderPhone}</p>
                     </div>
                   </div>
                 )}
@@ -162,31 +210,34 @@ export default function ManageRides() {
                         Accept
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700">
                       <DialogHeader>
-                        <DialogTitle>Confirm Ride Acceptance</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to accept this ride from{" "}
-                          {request.rider?.name}?
+                        <DialogTitle className="text-gray-900 dark:text-slate-100">
+                          Confirm Ride Acceptance
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-600 dark:text-slate-300">
+                          Are you sure you want to accept this ride from {riderName}?
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                        <div className="bg-gray-50 text-gray-800 dark:bg-slate-800 dark:text-slate-100 p-4 rounded-lg space-y-2 border border-gray-200 dark:border-slate-700">
                           <p>
-                            <span className="text-muted-foreground">Pickup:</span>{" "}
-                            {request.pickupLocation?.address}
+                            <span className="text-gray-500 dark:text-slate-400">Pickup:</span>{" "}
+                            {pickup?.address || "N/A"}
                           </p>
                           <p>
-                            <span className="text-muted-foreground">Dropoff:</span>{" "}
-                            {request.dropoffLocation?.address}
+                            <span className="text-gray-500 dark:text-slate-400">Dropoff:</span>{" "}
+                            {dropoff?.address || "N/A"}
                           </p>
                           <p>
-                            <span className="text-muted-foreground">Fare:</span> $
-                            {request.fare || request.price}
+                            <span className="text-gray-500 dark:text-slate-400">Fare:</span> ${fareValue}
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" className="flex-1">
+                          <Button
+                            variant="outline"
+                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                          >
                             Cancel
                           </Button>
                           <Button
@@ -213,7 +264,8 @@ export default function ManageRides() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

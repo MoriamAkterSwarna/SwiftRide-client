@@ -58,19 +58,19 @@ export const rideApi = baseApi.injectEndpoints({
       invalidatesTags: ["RIDE"],
     }),
 
+    getRideById: builder.query<IOtpResponse<IRide>, string>({
+      query: (id: string) => ({
+        url: `/ride/${id}`,
+        method: "GET",
+      }),
+      providesTags: ["RIDE"],
+    }),
+
     getRides: builder.query<IOtpResponse<IRide[]>, Record<string, any>>({
       query: (params: any) => ({
         url: "/ride-request/request",
         method: "GET",
         params: params,
-      }),
-      providesTags: ["RIDE"],
-    }),
-
-    getRideById: builder.query<IOtpResponse<IRide>, string>({
-      query: (id: string) => ({
-        url: `/ride/${id}`,
-        method: "GET",
       }),
       providesTags: ["RIDE"],
     }),
@@ -86,17 +86,59 @@ export const rideApi = baseApi.injectEndpoints({
 
     acceptRideRequest: builder.mutation({
       query: ({ id }: { id: string }) => ({
-        url: `/ride-request/${id}/accept`,
-        method: "POST",
+        url: `/ride/${id}/driver-accept`,
+        method: "PATCH",
       }),
-      invalidatesTags: ["RIDE"],
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        // Optimistically remove the ride from available rides
+        const patchResult = dispatch(
+          rideApi.util.updateQueryData('getAvailableRides', undefined, (draft: any) => {
+            if (draft?.data) {
+              const rides = Array.isArray(draft.data) ? draft.data : draft.data.rides || [];
+              const filteredRides = rides.filter((ride: any) => ride._id !== id);
+              if (Array.isArray(draft.data)) {
+                draft.data = filteredRides;
+              } else {
+                draft.data.rides = filteredRides;
+              }
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: ["RIDE", "AVAILABLE_RIDES"], // Add AVAILABLE_RIDES tag
     }),
 
     rejectRideRequest: builder.mutation({
       query: ({ id }: { id: string }) => ({
-        url: `/ride-request/${id}/cancel`,
+        url: `/ride/${id}/driver-reject`,
         method: "PATCH",
       }),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        // Optimistically remove the ride from available rides
+        const patchResult = dispatch(
+          rideApi.util.updateQueryData('getAvailableRides', undefined, (draft: any) => {
+            if (draft?.data) {
+              const rides = Array.isArray(draft.data) ? draft.data : draft.data.rides || [];
+              const filteredRides = rides.filter((ride: any) => ride._id !== id);
+              if (Array.isArray(draft.data)) {
+                draft.data = filteredRides;
+              } else {
+                draft.data.rides = filteredRides;
+              }
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ["RIDE"],
     }),
 
@@ -116,14 +158,7 @@ export const rideApi = baseApi.injectEndpoints({
       }),
     }),
 
-    requestRide: builder.mutation({
-      query: (data: any) => ({
-        url: "/ride/create",
-        method: "POST",
-        data: data,
-      }),
-    }),
-
+    // Additional endpoints for dashboard
     getEarningsData: builder.query({
       query: ({ period }) => ({
         url: "/ride/earnings",
@@ -136,6 +171,15 @@ export const rideApi = baseApi.injectEndpoints({
     getRideHistory: builder.query({
       query: (params: any) => ({
         url: "/ride-request/my-history",
+        method: "GET",
+        params: params,
+      }),
+      providesTags: ["RIDE"],
+    }),
+
+    getDriverRideHistory: builder.query({
+      query: (params: any) => ({
+        url: "/ride/driver-history",
         method: "GET",
         params: params,
       }),
@@ -191,17 +235,6 @@ export const rideApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // get rides data for Driver
-    // /available-rides 
-    
-    getAvailableRides: builder.query({
-      query: () => ({
-        url: "/ride-request/available-rides",
-        method: "GET",
-      }),
-      providesTags: ["RIDE"],
-    }),
-
     getUserActiveRideRequests: builder.query({
       query: () => ({
         url: "/ride-request/user/active",
@@ -227,7 +260,22 @@ export const rideApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["RIDE"],
     }),
-    
+
+    deleteRide: builder.mutation({
+      query: (id: string) => ({
+        url: `/ride/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["RIDE"],
+    }),
+
+    getAvailableRides: builder.query({
+      query: () => ({
+        url: '/ride/available',
+        method: 'GET',
+      }),
+      providesTags: ["RIDE", "AVAILABLE_RIDES"],
+    }),
 
   }),
 });
@@ -245,15 +293,16 @@ export const {
   useRejectRideRequestMutation,
   useCancelRideMutation,
   useEstimateFareMutation,
-  useRequestRideMutation,
   useGetEarningsDataQuery,
   useGetRideHistoryQuery,
+  useGetDriverRideHistoryQuery,
   useGetRideAnalyticsQuery,
   useGetRideRequestsQuery,
   useGetOngoingRidesQuery,
   useGetUserRideQuery,
-  useGetAvailableRidesQuery,
   useGetUserActiveRideRequestsQuery,
   useUpdateRideStatusMutation,
   useAssignDriverMutation,
+  useDeleteRideMutation,
+  useGetAvailableRidesQuery,
 } = rideApi;

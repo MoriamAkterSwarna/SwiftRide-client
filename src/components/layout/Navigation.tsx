@@ -206,7 +206,7 @@ export default function Navigation() {
               <Car className="h-8 w-8 text-blue-600 transition-transform group-hover:scale-110" />
               <div className="absolute inset-0 bg-blue-500/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               SwiftRide
             </span>
           </Link>
@@ -245,7 +245,7 @@ export default function Navigation() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-semibold">
+                      <div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-semibold">
                         {currentUser.name.charAt(0).toUpperCase()}
                       </div>
                       <span className="hidden sm:inline">{currentUser.name}</span>

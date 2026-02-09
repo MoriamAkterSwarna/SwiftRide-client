@@ -32,7 +32,7 @@ export const userApi = baseApi.injectEndpoints({
 
     updateDriverProfile: builder.mutation({
       query: (data) => ({
-        url: "/driver/profile",
+        url: "/driver/me",
         method: "PATCH",
         data,
       }),
@@ -41,10 +41,18 @@ export const userApi = baseApi.injectEndpoints({
 
     getDriverProfile: builder.query({
       query: () => ({
-        url: "/driver/profile",
+        url: "/driver/me",
         method: "GET",
       }),
       providesTags: ["USER"],
+    }),
+
+    toggleDriverAvailability: builder.mutation({
+      query: () => ({
+        url: "/driver/availability/toggle",
+        method: "PATCH",
+      }),
+      invalidatesTags: ["USER", "DRIVER"],
     }),
 
     // Apply to become a driver
@@ -212,6 +220,7 @@ export const {
   // useChangePasswordMutation,
   useUpdateDriverProfileMutation,
   useGetDriverProfileQuery,
+  useToggleDriverAvailabilityMutation,
   useApplyAsDriverMutation,
   useSaveEmergencyContactMutation,
   useGetEmergencyContactsQuery,

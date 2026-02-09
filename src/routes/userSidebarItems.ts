@@ -3,7 +3,8 @@ import BecomeDriver from "@/pages/User/BecomeDriver";
 import type { ISidebarItem } from "@/types";
 import AddRide from "@/pages/User/AddRide";
 import MyRideHistory from "@/pages/User/MyRideHistory";
-import { Home, Plus, History, UserCog, Briefcase } from "lucide-react";
+import PaymentHistory from "@/pages/User/PaymentHistory";
+import { Home, Plus, History, UserCog, Briefcase, CreditCard } from "lucide-react";
 
 export const userSidebarItems: ISidebarItem[] = [
   {
@@ -31,6 +32,17 @@ export const userSidebarItems: ISidebarItem[] = [
         url: "/user/my-rides",
         component: MyRideHistory,
         icon: History,
+      },
+    ],
+  },
+  {
+    title: "Payments",
+    items: [
+      {
+        title: "Payment History",
+        url: "/user/payment-history",
+        component: PaymentHistory,
+        icon: CreditCard,
       },
     ],
   },

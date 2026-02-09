@@ -3,7 +3,8 @@ import EarningsDashboard from "@/pages/Driver/EarningsDashboard";
 import ManageRides from "@/pages/Driver/ManageRides";
 import Profile from "@/pages/User/Profile";
 import type { ISidebarItem } from "@/types";
-import { Home, Car, DollarSign, UserCog, History } from "lucide-react";
+import { Home, Car, DollarSign, UserCog, History, DatabaseZap } from "lucide-react";
+import DriverDashboard from "@/pages/Driver/DriverDashboard";
 
 export const driverSidebarItems: ISidebarItem[] = [
   {
@@ -35,10 +36,16 @@ export const driverSidebarItems: ISidebarItem[] = [
     ],
   },
   {
-    title: "Earnings",
-    items: [
+    title:"Dashboard",
+    items:[
       {
-        title: "Dashboard",
+        title:"Dashboard",
+        url: "/driver/dashboard",
+        component: DriverDashboard,
+        icon: DatabaseZap,
+      },
+      {
+        title: "Earnings",
         url: "/driver/earnings",
         component: EarningsDashboard,
         icon: DollarSign,

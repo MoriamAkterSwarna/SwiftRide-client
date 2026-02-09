@@ -32,7 +32,7 @@ export const withAuth = (
         : requiredRole === userRole;
 
       if (!isAuthorized) {
-        return <Navigate to="/unauthorized" />;
+        return <Navigate to="/" />;
       }
     }
 

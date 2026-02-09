@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { useGetUserRideQuery } from "@/redux/features/ride/ride.api";
-import { DollarSign, Car, Search, Filter, ChevronDown, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { DollarSign, Car, Search, Filter, ChevronDown, Clock, CheckCircle, AlertCircle, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -66,11 +67,10 @@ const statusConfig = {
 };
 
 export default function MyRidesHistory() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "price-high" | "price-low">("recent");
-  const [selectedRideForModal, setSelectedRideForModal] = useState<Ride | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data, isLoading, error } = useGetUserRideQuery({});
 
@@ -95,6 +95,9 @@ export default function MyRidesHistory() {
         .map((item: any) => {
           if (!item || typeof item !== 'object') return null;
 
+          const vehicle = item.rideVehicle || item.vehicle;
+          const rideType = item.placeType || item.rideType;
+
           return {
             _id: item._id,
             id: item.id,
@@ -106,29 +109,27 @@ export default function MyRidesHistory() {
             dropOffTime: item.dropOffTime,
             cost: Number(item.cost) || 0,
             availableSeats: Number(item.availableSeats) || 0,
-            maxGuests: item.totalGuest || item.maxGuests, // Map totalGuest to maxGuests
+            maxGuests: item.totalGuest || item.maxGuests,
             status: item.status || 'PENDING',
-            vehicle: item.rideVehicle || item.vehicle, // Map rideVehicle to vehicle
-            rideType: item.placeType || item.rideType, // Map placeType to rideType
+            vehicle: typeof vehicle === 'object' && vehicle !== null ? (vehicle.name || vehicle.type || 'N/A') : (vehicle || 'N/A'),
+            rideType: typeof rideType === 'object' && rideType !== null ? (rideType.name || rideType.type || 'N/A') : (rideType || 'N/A'),
             amenities: item.amenities || [],
             images: item.images || [],
             createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            __v: item.__v
           };
         })
-        .filter((item): item is Ride => {
+        .filter((item): item is NonNullable<typeof item> => {
           return item !== null &&
-            item.title &&
-            item.pickUpLocation &&
-            item.dropOffLocation &&
-            item.pickUpTime &&
-            item.dropOffTime &&
+            !!item.title &&
+            !!item.pickUpLocation &&
+            !!item.dropOffLocation &&
+            !!item.pickUpTime &&
+            !!item.dropOffTime &&
             typeof item.cost === 'number' &&
             typeof item.availableSeats === 'number' &&
-            item.status &&
-            item.createdAt;
-        });
+            !!item.status &&
+            !!item.createdAt;
+        }) as Ride[];
 
       return mappedRides;
     } catch (err) {
@@ -141,7 +142,7 @@ export default function MyRidesHistory() {
 
   // Filter and sort rides
   const filteredRides = useMemo(() => {
-    let filtered = rides.filter(ride => {
+    const filtered = rides.filter(ride => {
       const matchesSearch =
         ride.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ride.pickUpLocation?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -172,18 +173,6 @@ export default function MyRidesHistory() {
     completedRides: rides.filter(r => r.status === "COMPLETED").length,
     totalEarnings: rides.reduce((acc, ride) => acc + (ride.cost * ride.availableSeats), 0),
   }), [rides]);
-
-  const handleOpenModal = (ride: Ride) => {
-
-    console.log("Selected ride for modal:", ride); // Debug log
-    setSelectedRideForModal(ride);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedRideForModal(null);
-  };
 
   if (isLoading) {
     return (
@@ -318,7 +307,8 @@ export default function MyRidesHistory() {
             return (
               <div
                 key={rideId}
-                className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 hover:shadow-lg dark:hover:shadow-2xl transition-all duration-300"
+                className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 hover:shadow-lg dark:hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(`/user/my-rides/${rideId}`)}
               >
                 {/* Main Ride Card */}
                 <div className="p-6">
@@ -373,12 +363,24 @@ export default function MyRidesHistory() {
                     </div>
                   </div>
 
-                  {/* Status Badge */}
-                  <div className={`flex items-center justify-center gap-2 px-3 py-1.5 mt-4 rounded-full ${status.color} whitespace-nowrap shrink-0 w-fit mx-auto`}>
-                    <div className={`w-2 h-2 rounded-full ${status.badgeColor} animate-pulse`} />
-                    <span className={`text-sm font-semibold ${status.textColor}`}>{status.label}</span>
+                  {/* Status Badge and View Button */}
+                  <div className="flex items-center justify-between mt-4 gap-4">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${status.color} whitespace-nowrap shrink-0`}>
+                      <div className={`w-2 h-2 rounded-full ${status.badgeColor} animate-pulse`} />
+                      <span className={`text-sm font-semibold ${status.textColor}`}>{status.label}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Navigating to ride details for ID:", rideId);
+                        navigate(`/user/my-rides/${rideId}`);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Details
+                    </button>
                   </div>
-
                 </div>
               </div>
             );
@@ -390,9 +392,6 @@ export default function MyRidesHistory() {
       <div className="mt-8 text-center text-gray-600 dark:text-gray-400">
         <p>Showing {filteredRides.length} of {rides.length} rides</p>
       </div>
-
-
-
     </div>
   );
 }

@@ -13,6 +13,8 @@ import GoogleCallback from "@/pages/GoogleCallback";
 import { generateRoutes } from "@/utils/generateRoutes";
 import Settings from "@/pages/Settings";
 import Helpline from "@/pages/Helpline";
+import MyRideDetails from "@/pages/User/MyRideDetails";
+import PaymentHistory from "@/pages/User/PaymentHistory";
 
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
@@ -68,10 +70,18 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/user/add-ride" /> },
       ...generateRoutes(userSidebarItems),
+      {
+        path: "my-rides/:id",
+        Component: MyRideDetails,
+      },
+      // {
+      //   path: "payment-history",
+      //   Component: PaymentHistory,
+      // },
     ],
   },
   {
-    Component: withAuth(DashboardLayout, role.rider as TRole),
+    Component: withAuth(DashboardLayout, role.driver as TRole),
     path: "/driver",
     children: [
       { index: true, element: <Navigate to="/driver/manage-rides" /> },
@@ -94,10 +104,10 @@ export const router = createBrowserRouter([
     Component: GoogleCallback,
     path: "/auth/google/callback",
   },
-  {
-    Component: Unauthorized,
-    path: "/unauthorized",
-  },
+  // {
+  //   Component: Unauthorized,
+  //   path: "/unauthorized",
+  // },
   {
     Component: withAuth(Settings, [role.user, role.driver, role.admin, role.superAdmin] as TRole[]),
     path: "/settings",
