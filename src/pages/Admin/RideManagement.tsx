@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "@/redux/store";
-import { useGetRideRequestsQuery, useUpdateRideStatusMutation, useAssignDriverMutation, rideApi, useGetRidesQuery } from "@/redux/features/ride/ride.api";
+import {  useUpdateRideStatusMutation, useAssignDriverMutation, rideApi, useGetRidesQuery } from "@/redux/features/ride/ride.api";
 import { useGetAllDriversQuery } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default function RideManagement() {
   const dispatch = useDispatch<AppDispatch>();
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -46,13 +46,7 @@ export default function RideManagement() {
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const queryParams = {
-    page,
-    limit,
-    search: searchTerm || undefined,
-    status: statusFilter === "ALL" ? undefined : statusFilter,
-    date: dateFilter || undefined,
-  };
+
 
 
 
@@ -72,7 +66,7 @@ export default function RideManagement() {
   const [assignDriver, { isLoading: driverAssigning }] = useAssignDriverMutation();
 
   const rides = ridesData?.data || [];
-  const totalRides = ridesData?.meta?.total || rides.length;
+  const totalRides = rides.length;
   const totalPages = Math.ceil(totalRides / limit);
   
   // Handle different driver data structures from API
@@ -451,9 +445,9 @@ export default function RideManagement() {
             <div className="space-y-6 px-2">
               {/* Rider & Driver Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 md:p-5 border border-blue-100">
+                <div className="bg-linear-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 md:p-5 border border-blue-100">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0">
                       <User className="w-5 h-5 text-white" />
                     </div>
                     <h3 className="font-semibold text-slate-800 text-sm md:text-base">Rider Info</h3>
@@ -473,9 +467,9 @@ export default function RideManagement() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 md:p-5 border border-emerald-100">
+                <div className="bg-linear-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 md:p-5 border border-emerald-100">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-linear-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
                       <Car className="w-5 h-5 text-white" />
                     </div>
                     <h3 className="font-semibold text-slate-800 text-sm md:text-base">Driver Info</h3>
@@ -585,26 +579,26 @@ export default function RideManagement() {
               </div>
 
               {/* Location Info */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-4 md:p-5 border border-purple-100">
+              <div className="bg-linear-to-br from-purple-50 to-pink-50 rounded-2xl p-4 md:p-5 border border-purple-100">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                  <MapPin className="w-5 h-5 text-purple-600 shrink-0" />
                   <h3 className="font-semibold text-slate-800 text-sm md:text-base">Route Information</h3>
                 </div>
                 <div className="space-y-3 text-xs md:text-sm">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">A</div>
+                    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">A</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-600 mb-1">Pickup Location</p>
-                      <p className="font-medium text-slate-800 break-words">
+                      <p className="font-medium text-slate-800 wrap-break-word">
                         {selectedRide.pickUpLocation?.address || selectedRide.pickupLocation?.address || selectedRide.from?.name || "N/A"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">B</div>
+                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">B</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-600 mb-1">Dropoff Location</p>
-                      <p className="font-medium text-slate-800 break-words">
+                      <p className="font-medium text-slate-800 wrap-break-word">
                         {selectedRide.dropOffLocation?.address || selectedRide.dropoffLocation?.address || selectedRide.to?.name || "N/A"}
                       </p>
                     </div>

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { useTheme } from "@/hooks/useTheme";
 import { useGetDriverRideHistoryQuery } from "@/redux/features/ride/ride.api";
 import { MapPin, DollarSign, Loader2, XCircle, Car, Check, X, Calendar, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ type FilterStatus = "all" | "accepted" | "rejected" | "pending" | "completed" | 
 export default function DriverDashboard() {
   const { theme } = useTheme();
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [filterStatus] = useState<FilterStatus>("all");
   const { data: ridesData, isLoading } = useGetDriverRideHistoryQuery(
     { page: 1, limit: 50 },
     { skip: !hasSessionHint }
@@ -38,7 +38,6 @@ export default function DriverDashboard() {
     const status = normalizedStatus(ride.status);
     return status === "active" || status === "requested" || status === "accepted" || status === "in_transit";
   }).length;
-  const _cancelledRides = rides.filter((ride: any) => normalizedStatus(ride.status) === "cancelled").length;
 
   // Filter rides based on selected status
   const filteredRides = rides.filter((ride: any) => {

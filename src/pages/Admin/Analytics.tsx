@@ -10,8 +10,7 @@ import {
 } from "@/redux/features/ride/ride.api";
 import { 
   BarChart, 
-  Bar, 
-  LineChart, 
+  Bar,  
   Line, 
   XAxis, 
   YAxis, 
@@ -145,10 +144,10 @@ const Analytics = () => {
   return (
     <div className={`min-h-screen p-6 ${
       isDark
-        ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
-        : "bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 text-slate-900"
+        ? "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
+        : "bg-linear-to-br from-slate-50 via-blue-50 to-cyan-50 text-slate-900"
     }`}>
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-400 mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className={`text-4xl font-bold mb-2 ${isDark ? "text-white" : "text-slate-800"}`}>Dashboard</h1>
@@ -239,11 +238,11 @@ const Analytics = () => {
 
           {/* Payment Gateway Status */}
           <div className="space-y-4">
-            {paymentGateways.map((gateway, idx) => (
+            {paymentGateways.map((gateway : any, idx : number) => (
               <div key={idx} className={`rounded-2xl p-5 transition ${subCardClass} ${isDark ? "hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)]" : "hover:shadow-md"}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gateway.color} flex items-center justify-center text-xl`}>
+                    <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gateway.color} flex items-center justify-center text-xl`}>
                       {gateway.logo}
                     </div>
                     <span className={`font-medium ${isDark ? "text-slate-100" : "text-slate-800"}`}>{gateway.name}</span>

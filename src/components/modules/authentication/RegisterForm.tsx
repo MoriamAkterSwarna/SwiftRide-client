@@ -4,10 +4,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+
 } from "@/components/ui/card";
 import {
   Form,
@@ -24,7 +21,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRegisterMutation } from "@/redux/features/auth/auth.api";
 import { useNavigate, Link } from "react-router";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import Password from "@/components/ui/Password";
 import { CheckCircle, Shield, Car, User } from "lucide-react";
 import { motion } from "motion/react";
@@ -68,7 +65,7 @@ const roleOptions = {
   },
 };
 
-export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
+export function RegisterForm({ className }: React.ComponentProps<typeof Card>) {
   const [register] = useRegisterMutation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);

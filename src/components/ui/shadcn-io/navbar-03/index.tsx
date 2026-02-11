@@ -1,21 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@radix-ui/react-popover';
 import * as React from 'react';
 import { useEffect, useState, useRef } from 'react';
-import { Button } from '@repo/shadcn-ui/components/ui/button';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from '@repo/shadcn-ui/components/ui/navigation-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/shadcn-ui/components/ui/popover';
-import { cn } from '@repo/shadcn-ui/lib/utils';
-import type { ComponentProps } from 'react';
+import { Button } from '../../button';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@radix-ui/react-navigation-menu';
+
+
+
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGAttributes<SVGElement>) => {
@@ -60,7 +54,7 @@ const HamburgerIcon = ({ className, ...props }: React.SVGAttributes<SVGElement>)
   >
     <path
       d="M4 12L20 12"
-      className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
+      className="origin-center -translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-315"
     />
     <path
       d="M4 12H20"
@@ -68,7 +62,7 @@ const HamburgerIcon = ({ className, ...props }: React.SVGAttributes<SVGElement>)
     />
     <path
       d="M4 12H20"
-      className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[135deg]"
+      className="origin-center -translate-y-1.75 transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-135"
     />
   </svg>
 );
@@ -105,12 +99,9 @@ export const Navbar03 = React.forwardRef<HTMLElement, Navbar03Props>(
     {
       className,
       logo = <Logo />,
-      logoHref = '#',
       navigationLinks = defaultNavigationLinks,
       signInText = 'Sign In',
-      signInHref = '#signin',
       ctaText = 'Get Started',
-      ctaHref = '#get-started',
       onSignInClick,
       onCtaClick,
       ...props
@@ -153,7 +144,7 @@ export const Navbar03 = React.forwardRef<HTMLElement, Navbar03Props>(
       <header
         ref={combinedRef}
         className={cn(
-          'sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 [&_*]:no-underline',
+          'sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 md:px-6 **:no-underline',
           className
         )}
         {...(props as any)}
@@ -215,7 +206,7 @@ export const Navbar03 = React.forwardRef<HTMLElement, Navbar03Props>(
                           href={link.href}
                           onClick={(e) => e.preventDefault()}
                           className={cn(
-                            'group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative',
+                            'group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-active:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer relative',
                             'before:absolute before:bottom-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary before:scale-x-0 before:transition-transform before:duration-300 hover:before:scale-x-100',
                             link.active && 'before:scale-x-100 text-primary'
                           )}

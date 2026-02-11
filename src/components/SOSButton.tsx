@@ -9,7 +9,7 @@ interface SOSButtonProps {
   rideId?: string;
 }
 
-export default function SOSButton({ onActivate, visible = true, rideId }: SOSButtonProps) {
+export default function SOSButton({ onActivate, visible = true }: SOSButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -60,9 +60,9 @@ export default function SOSButton({ onActivate, visible = true, rideId }: SOSBut
           // Get user location and share
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
-                const mapLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+              () => {
+                
+               
                 // In a real app, send this to emergency contact
                 toast.success("Live location shared with emergency contact");
               },

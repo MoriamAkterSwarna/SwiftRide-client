@@ -9,7 +9,7 @@ import Verify from "@/pages/Verify";
 import Features from "@/pages/Public/Features";
 import Contact from "@/pages/Public/Contact";
 import FAQ from "@/pages/Public/FAQ";
-import GoogleCallback from "@/pages/GoogleCallback";
+// import GoogleCallback from "@/pages/GoogleCallback";
 import { generateRoutes } from "@/utils/generateRoutes";
 import Settings from "@/pages/Settings";
 import Helpline from "@/pages/Helpline";
@@ -21,7 +21,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { adminSidebarItems } from "./adminSidebarItems";
 import { userSidebarItems } from "./userSidebarItems";
 import { driverSidebarItems } from "./driverSidebarItems";
-import Unauthorized from "@/pages/Unauthorized";
+// import Unauthorized from "@/pages/Unauthorized";
 import { withAuth } from "@/utils/withAuth";
 import type { TRole } from "@/types";
 import { role } from "@/constants/role";
@@ -101,10 +101,10 @@ export const router = createBrowserRouter([
     Component: Verify,
     path: "/verify",
   },
-  {
-    Component: GoogleCallback,
-    path: "/auth/google/callback",
-  },
+  // {
+  //   Component: GoogleCallback,
+  //   path: "/auth/google/callback",
+  // },
   {
     Component: PaymentResult,
     path: "/payment/success",

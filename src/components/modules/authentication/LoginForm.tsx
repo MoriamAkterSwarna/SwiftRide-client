@@ -70,11 +70,11 @@ export function LoginForm({
         // Redirect based on user role
         const userRole = result.data.user?.role?.toUpperCase();
         if (userRole === "SUPER_ADMIN" || userRole === "ADMIN") {
-          navigate("/admin");
+          navigate("/admin/analytics");
         } else if (userRole === "USER") {
-          navigate("/user");
+          navigate("/");
         } else if (userRole === "DRIVER" || userRole === "RIDER") {
-          navigate("/driver");
+          navigate("/driver/manage-rides");
         } else {
           navigate("/");
         }

@@ -131,22 +131,6 @@ const Home = () => {
     },
   };
 
-  const slideInVariants = {
-    hidden: { x: -100, opacity: 0 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: { duration: 0.8 },
-    },
-  };
-
-  const floatVariants = {
-    hidden: { y: 0 },
-    visible: {
-      y: [-20, 20, -20],
-      transition: { duration: 4, repeat: Infinity },
-    },
-  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -244,7 +228,7 @@ const Home = () => {
                 key={idx}
                 variants={itemVariants}
                 whileHover={{ scale: 1.05 }}
-                className={`relative group overflow-hidden rounded-2xl ${theme === "dark" ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700" : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"}`}
+                className={`relative group overflow-hidden rounded-2xl ${theme === "dark" ? "bg-linear-to-br from-gray-800 to-gray-900 border border-gray-700" : "bg-linear-to-br from-white to-gray-50 border border-gray-200"}`}
               >
                 <div className="absolute inset-0 bg-linear-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-300" />
                 <div className="relative p-8 space-y-6">
@@ -262,7 +246,7 @@ const Home = () => {
                     <span className="text-3xl font-bold text-blue-500">{ride.price}</span>
                     <Button
                       onClick={handleBookNow}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg group-hover:translate-x-1 transition-transform"
+                      className="bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg group-hover:translate-x-1 transition-transform"
                     >
                       Book Now <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -285,7 +269,7 @@ const Home = () => {
             className="text-center mb-16"
           >
             <motion.h2 variants={itemVariants} className="text-4xl sm:text-5xl font-bold mb-4">
-              What Our <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Users Say</span>
+              What Our <span className="bg-linear-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Users Say</span>
             </motion.h2>
             <motion.p variants={itemVariants} className={`text-xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}>
               Join thousands of satisfied customers
@@ -297,7 +281,7 @@ const Home = () => {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className={`p-8 sm:p-12 rounded-3xl ${theme === "dark" ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700" : "bg-white border border-gray-200 shadow-lg"}`}
+            className={`p-8 sm:p-12 rounded-3xl ${theme === "dark" ? "bg-linear-to-br from-gray-800 to-gray-900 border border-gray-700" : "bg-white border border-gray-200 shadow-lg"}`}
           >
             <motion.div
               key={activeTestimonial}
@@ -359,13 +343,13 @@ const Home = () => {
             viewport={{ once: true }}
           >
             <motion.h2 variants={itemVariants} className="text-5xl sm:text-6xl font-bold mb-6">
-              Ready to <span className="bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Take Off?</span>
+              Ready to <span className="bg-linear-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Take Off?</span>
             </motion.h2>
             <motion.p variants={itemVariants} className={`text-2xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"} mb-10`}>
               Download the app and get $5 off your first ride
             </motion.p>
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl font-semibold group">
+              <Button className="bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl font-semibold group">
                 Download App
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>

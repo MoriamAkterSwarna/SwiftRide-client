@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAppSelector } from "@/redux/hook";
 import { useGetAllUsersQuery, useBlockUserMutation, useUnblockUserMutation, useUpdateUserRoleMutation } from "@/redux/features/user/user.api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, Lock, Unlock, Loader2, UserCog } from "lucide-react";
+import { Search, Lock, Unlock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { role } from "@/constants/role";
 

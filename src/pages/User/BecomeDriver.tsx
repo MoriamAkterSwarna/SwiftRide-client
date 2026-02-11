@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useApplyAsDriverMutation } from "@/redux/features/user/user.api";
 import { useGetUserProfileQuery } from "@/redux/features/user/user.api";
-import { Car, FileText, AlertCircle, Loader2, CheckCircle, Shield, Star, User, MapPin, Clock } from "lucide-react";
+import { Car, FileText, AlertCircle, Loader2, CheckCircle, Shield, Star, User, Clock } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -115,20 +115,20 @@ const BecomeDriver = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 rounded-3xl p-8 md:p-12 mb-12 text-white shadow-2xl">
+        <div className="relative overflow-hidden bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 rounded-3xl p-8 md:p-12 mb-12 text-white shadow-2xl">
           <div className="absolute inset-0 bg-black opacity-10"></div>
           <div className="relative z-10">
             <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6">
                   <Car size={48} className="text-white" />
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-linear-to-r from-white to-blue-100">
                   Become a Driver
                 </h1>
                 <p className="text-xl text-blue-100 mb-6 max-w-2xl">
@@ -234,7 +234,7 @@ const BecomeDriver = () => {
           ) : profileError ? (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 mb-8">
               <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" />
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-1" />
                 <div>
                   <p className="text-red-800 dark:text-red-300 font-medium mb-2">
                     Error loading profile
@@ -254,7 +254,7 @@ const BecomeDriver = () => {
           ) : !userProfile?.data?._id ? (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 mb-8">
               <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" />
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-1" />
                 <div>
                   <p className="text-red-800 dark:text-red-300 font-medium mb-2">
                     Profile Not Available
@@ -275,7 +275,7 @@ const BecomeDriver = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Personal Information */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-8 rounded-2xl border border-blue-200 dark:border-blue-800 mb-8">
+                <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-8 rounded-2xl border border-blue-200 dark:border-blue-800 mb-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="bg-blue-100 dark:bg-blue-900/30 rounded-xl p-3">
                       <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -321,7 +321,7 @@ const BecomeDriver = () => {
                 </div>
 
                 {/* Vehicle Information */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-8 rounded-2xl border border-green-200 dark:border-green-800 mb-8">
+                <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-8 rounded-2xl border border-green-200 dark:border-green-800 mb-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-3">
                       <Car className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -399,7 +399,7 @@ const BecomeDriver = () => {
                 </div>
 
                 {/* Documentation */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-8 rounded-2xl border border-purple-200 dark:border-purple-800 mb-8">
+                <div className="bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-8 rounded-2xl border border-purple-200 dark:border-purple-800 mb-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="bg-purple-100 dark:bg-purple-900/30 rounded-xl p-3">
                       <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -435,9 +435,9 @@ const BecomeDriver = () => {
                 </div>
 
                 {/* Terms & Conditions */}
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 mb-8">
+                <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 mb-8">
                   <div className="flex items-start gap-3">
-                    <Shield className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-1" />
+                    <Shield className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-1" />
                     <div>
                       <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                         By submitting this application, you confirm that all information provided is accurate and truthful.
@@ -468,7 +468,7 @@ const BecomeDriver = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="flex-1 h-12 rounded-xl bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     {isLoading ? (
                       <>
@@ -486,7 +486,7 @@ const BecomeDriver = () => {
         </div>
 
         {/* Requirements Section */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-8 md:p-12 border border-gray-200 dark:border-gray-700">
+        <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-8 md:p-12 border border-gray-200 dark:border-gray-700">
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Driver Requirements
@@ -498,7 +498,7 @@ const BecomeDriver = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 flex-shrink-0">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 shrink-0">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
@@ -512,7 +512,7 @@ const BecomeDriver = () => {
             </div>
 
             <div className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 flex-shrink-0">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 shrink-0">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
@@ -526,7 +526,7 @@ const BecomeDriver = () => {
             </div>
 
             <div className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 flex-shrink-0">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 shrink-0">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
@@ -540,7 +540,7 @@ const BecomeDriver = () => {
             </div>
 
             <div className="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 flex-shrink-0">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-2 shrink-0">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>

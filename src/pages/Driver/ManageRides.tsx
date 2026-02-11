@@ -18,7 +18,7 @@ import { MapPin, Clock, DollarSign, Phone, Loader2, CheckCircle, XCircle } from 
 import { toast } from "sonner";
 export default function ManageRides() {
   const hasSessionHint = useSelector((state: any) => state.authSession.hasSession);
-  const [selectedRideRequest, setSelectedRideRequest] = useState<any>(null);
+  const [setSelectedRideRequest] = useState<any>(null);
   const { data, isLoading, refetch: refetchRides } = useGetAvailableRidesQuery({}, { skip: !hasSessionHint });
   const [acceptRide, { isLoading: acceptLoading }] = useAcceptRideRequestMutation();
   const [rejectRide, { isLoading: rejectLoading }] = useRejectRideRequestMutation();
@@ -149,7 +149,7 @@ export default function ManageRides() {
               <CardContent className="space-y-4">
                 {/* Pickup Location */}
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <MapPin className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-muted-foreground">Pickup</p>
                     <p className="font-medium">

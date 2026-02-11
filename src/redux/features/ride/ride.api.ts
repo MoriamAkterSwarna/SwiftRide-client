@@ -243,7 +243,7 @@ export const rideApi = baseApi.injectEndpoints({
           params: params,
         };
       },
-      onQueryStarted: async (arg, { queryFulfilled }) => {
+      onQueryStarted: async ( { queryFulfilled }) => {
         try {
           const { data } = await queryFulfilled;
           console.log("Ride requests API response:", data);

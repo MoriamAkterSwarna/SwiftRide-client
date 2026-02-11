@@ -36,7 +36,7 @@ import { toast } from "sonner";
 export default function DriverManagement() {
   const hasSessionHint = useAppSelector((state) => state.authSession.hasSession);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
